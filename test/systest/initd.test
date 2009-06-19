@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "initd.test: $*" > "$(dirname $0)"/log
+exit 0

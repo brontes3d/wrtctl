@@ -1,0 +1,267 @@
+#!/bin/bash
+testdir="$(dirname $(readlink -f $0))"
+topdir="$(readlink -f ${testdir}/../)"
+
+port="2450"
+moddir="@TOP_BUILDDIR@/src/mods/"
+
+wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir}"
+wrtctlp="@TOP_BUILDDIR@/src/bin/wrtctl -p ${port} -t localhost"
+
+export WRTCTL_UCI_CONFDIR=${testdir}/config
+export WRTCTL_UCI_SAVEDIR=${testdir}/savedir
+export WRTCTL_SYS_INITD_DIR=${testdir}/systest
+export WRTCTL_SYS_SHUTDOWN_PATH=${testdir}/systest/shutdown
+
+create_conf_file() {
+   mkdir -p ${WRTCTL_UCI_CONFDIR} >/dev/null
+   mkdir -p ${WRTCTL_UCI_SAVEDIR} >/dev/null
+   cat <<-EOF > ${WRTCTL_UCI_CONFDIR}/test
+config 'anon_section'
+    option 'first_opt' '1'
+    option 'second_opt' '2'
+
+config 'anon_section'
+    option 'first_opt' '3'
+    option 'second_opt' '4'
+
+config 'section_type' 'section_name'
+    option 'optA' 'A'
+    option 'optB' 'B'
+EOF
+    rm -f ${WRTCTL_UCI_SAVEDIR}/test
+}
+
+grep_file() {
+    local str=$1
+    local f=$2
+
+    if [ -z "${str}" ]; then
+        [ ! -s "${f}" ]
+        return $?
+    elif ! grep -E "${str}" ${2} >/dev/null; then
+        echo
+        echo "ERROR:  Did not find '$str' in $2";
+        return 1
+    fi
+}
+
+run_test() {
+    local exp_rc
+    local exp_str
+    local rc
+
+    exp_rc=$1;shift
+    exp_str=$1;shift
+
+    "$@" &> test.log;rc=$?
+
+    if [[ ${rc} -ne ${exp_rc} ]]; then
+        echo
+        echo "   ERROR:  Return ${rc} != ${exp_rc}"
+        echo "Command line was:  $@"
+        return 1
+    fi
+
+    if ! grep_file "${exp_str}" test.log; then
+        echo "Command line was:  $@"
+        return 1
+    fi
+    
+    return 0
+}
+
+fail() {
+    echo "Failed"
+    kill ${wrtctld_pid}
+    exit 1
+}
+
+test_uci_cmd_get() {
+    local p="${wrtctlp} -s uci -c "
+
+    echo -n "Testing UCI get commands...  "
+    run_test 0 "test\.cfg[0-9]+\.first_opt=1" $p 'get test..first_opt'  || fail
+    run_test 0 "test\.@anon_section\[0\].first_opt=1" $p 'get test.@anon_section[0].first_opt'  || fail
+    run_test 0 "test\.@anon_section\[1\].first_opt=3" $p 'get test.@anon_section[1].first_opt'  || fail
+    run_test 0 "test\.section_name.optA=A" $p 'get test.section_name.optA'  || fail
+    run_test 1 "Server UCI Error:  3, test.blah.blah not found" $p 'get test.blah.blah'  || fail
+    run_test 1 "Server UCI Error:  3, uci_lookup_ptr: Entry not found" $p 'get blah.blah.blah'  || fail
+    echo "Success."
+    return 0
+}
+
+test_uci_cmd_set_commit() {
+    local p="${wrtctlp} -s uci -c"
+    local path="${WRTCTL_UCI_CONFDIR}/test"
+    local spath="${WRTCTL_UCI_SAVEDIR}/test"
+    
+    echo -n "Testing UCI set and commit commands...  "
+
+    run_test 0 "" $p 'set test..first_opt=was_set' || fail
+    grep_file "first_opt=was_set" ${spath} || fail
+    run_test 0 "" $p 'set test..first_opt=was_set2' || fail
+    grep_file "first_opt=was_set2" ${spath} || fail
+    run_test 0 "" $p 'commit' || fail
+    grep_file "option 'first_opt' 'was_set2'" ${path} || fail
+    
+    run_test 0 "" $p 'set test..first_opt=was_set3' || fail
+    grep_file "first_opt=was_set3" ${spath} || fail
+    run_test 0 "" $p 'commit' || fail
+    run_test 0 "" $p 'commit' || fail
+    grep_file "option 'first_opt' 'was_set3'" ${path} || fail
+     
+    run_test 0 "" $p 'set test.@anon_section[0].first_opt=was_set_again' || fail
+    grep_file "first_opt=was_set_again" ${spath} || fail
+    run_test 0 "" $p 'commit test' || fail
+    grep_file "option 'first_opt' 'was_set_again'" ${path} || fail
+
+    run_test 0 "" $p 'set test.section_name.optA=was_set' || fail
+    grep_file "optA=was_set" ${spath} || fail
+    run_test 0 "" $p 'commit' || fail
+    grep_file "option 'optA' 'was_set'" ${path} || fail
+
+
+    run_test 1 "Server UCI Error:  3, uci_cmd_set:uci_fill_section: Entry not found" $p 'set blah..first_opt=blah' || fail
+    run_test 1 "Server UCI Error:  2, uci_set: Invalid argument" $p 'set test.blah.first_opt=blah' || fail
+    run_test 1 "Server UCI Error:  3, uci_load_package: Entry not found" $p 'commit blah' || fail
+    if grep 'blah' ${spath} >/dev/null || grep 'blah' ${path} >/dev/null; then
+        echo "Invalid commands still wrote 'blah' to ${spath} and/or ${path}"
+        return 1
+    fi
+    echo "Success"
+}
+
+test_uci_cmd_revert() {
+    local p="${wrtctlp} -s uci -c"
+    
+    echo -n "Testing UCI revert...  "
+
+    
+    run_test 0 "" $p 'set test..first_opt=was_set' || fail
+    run_test 0 "" $p 'revert' || fail
+    if [ -s "${WRTCTL_UCI_SAVEDIR}/test" ]; then
+        echo "ERROR:  ${WRTCTL_UCI_SAVEDIR}/test was not reverted"
+        exit 1
+    fi
+    
+    run_test 0 "" $p 'set test..first_opt=was_set2' || fail
+    run_test 0 "" $p 'revert test' || fail
+    if [ -s "${WRTCTL_UCI_SAVEDIR}/test" ]; then
+        echo "ERROR:  ${WRTCTL_UCI_SAVEDIR}/test was not reverted"
+        exit 1
+    fi
+
+    run_test 0 "" $p 'set test..first_opt=was_set2' || fail
+    run_test 0 "" $p 'revert test..first_opt' || fail
+    if [ -s "${WRTCTL_UCI_SAVEDIR}/test" ]; then
+        echo "ERROR:  ${WRTCTL_UCI_SAVEDIR}/test was not reverted"
+        exit 1
+    fi
+
+    run_test 0 "" $p 'commit' || fail
+    if grep "'option 'first_opt' 'was_set2'" ${WRTCTL_UCI_CONFDIR}; then
+        echo "ERROR:  ${WRTCTL_UCI_CONFDIR} got reverted changes."
+        exit 1
+    fi
+    echo "Success"
+    return 0
+}
+
+test_sys_cmd_ping() {
+    local p="${wrtctlp} -s daemon -c ping"
+    echo -n "Testing Daemon ping..."
+    run_test 0 "^[0-9]+$" $p || fail
+    echo "Success"
+}
+
+test_sys_cmd_reboot() {
+    local p="${wrtctlp} -s daemon -c reboot"
+    local op=${WRTCTL_SYS_SHUTDOWN_PATH}
+    local lpath="${WRTCTL_SYS_INITD_DIR}/log"
+
+    chmod +x ${op}
+    rm -f ${WRTCTL_SYS_INITD_DIR}/log
+   
+    echo -n "Testing Daemon reboot..."
+    run_test 0 "Rebooting\.\.\." $p || fail
+    sleep 6 # Wait for child to write the file
+    grep_file "shutdown: -r now" ${lpath} || fail
+    rm -f ${WRTCTL_SYS_INITD_DIR}/log
+
+    export WRTCTL_SYS_SHUTDOWN_PATH=/path/does/not/exist
+    start_daemon
+    run_test 1 "Server Daemon Error:  2, access:  No such file or directory" $p || fail
+    [[ ! -f ${WRTCTL_SYS_INITD_DIR}/log ]] || fail
+    stop_daemon
+    
+
+    export WRTCTL_SYS_SHUTDOWN_PATH=${op}
+    start_daemon
+    chmod -x ${op}
+    run_test 1 "Server Daemon Error:  13, access:  Permission denied" $p || fail
+    chmod +x ${op}
+    [[ ! -f ${WRTCTL_SYS_INITD_DIR}/log ]] || fail
+    echo "Success"
+
+}
+
+test_sys_cmd_initd() {
+    local p="${wrtctlp} -s sys -c "
+    local lpath="${WRTCTL_SYS_INITD_DIR}/log"
+    local it="${WRTCTL_SYS_INITD_DIR}/initd.test"
+
+    echo "Testing SYS initd..."
+    chmod +x ${it}
+    rm -f ${lpath} > /dev/null
+    run_test 0 "initd.test start success" $p 'initd initd.test start' || fail
+    grep_file "initd.test: start" ${lpath} || fail
+
+    rm -f ${lpath} > /dev/null
+    run_test 0 "initd.test stop success" $p 'initd initd.test stop' || fail
+    grep_file "initd.test: stop" ${lpath} || fail
+
+    rm -f ${lpath} > /dev/null
+    run_test 0 "initd.test restart success" $p 'initd initd.test restart' || fail
+    grep_file "initd.test: restart" ${lpath} || fail
+
+   
+    rm -f ${lpath} > /dev/null
+    run_test 1 "Invalid argument to sys\.initd" $p 'initd initd.test invalid' || fail
+    run_test 1 "Server SysCmds Error:  22, Invalid init command" \
+        $p 'initd initd.test restartblah' || fail
+    
+    chmod -x ${it}
+    run_test 1 "Server SysCmds Error:  1, access:  Permission denied" \
+        $p 'initd initd.test stop' || fail
+    chmod +x ${it}
+   
+    run_test 1 "Server SysCmds Error:  1, access:  No such file or directory" \
+        $p 'initd nofile stop' || fail
+    run_test 1 "Server SysCmds Error:  1, access:  No such file or directory" \
+        $p 'initd /invalid/path/nofile stop' || fail
+    [[ ! -f ${lpath} ]] || fail
+
+    echo "Success"
+}
+
+start_daemon() {
+    ${wrtctldp} -m sys-cmds,uci-cmds -f &> wrtctld.log &
+    wrtctld_pid=$!
+}
+
+stop_daemon() {
+    kill ${wrtctld_pid} || fail
+}
+
+start_daemon
+create_conf_file
+
+test_uci_cmd_get
+test_uci_cmd_set_commit
+test_uci_cmd_revert
+test_sys_cmd_ping
+#test_sys_cmd_reboot
+test_sys_cmd_initd
+stop_daemon
+exit 0
