@@ -70,14 +70,10 @@ int uci_load_package            (ucih_ctx_t ucih, uci_package_t *package, char *
  */
 int uci_fill_section            (ucih_ctx_t ucih, char **pso);
 
-/* UCI_CMD_SET */
-int uci_cmd_set(ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
-/* UCI_CMD_GET */
-int uci_cmd_get(ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
-/* UCI_CMD_COMMIT */
-int uci_cmd_commit(ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
-/* UCI_CMD_REVERT */
-int uci_cmd_revert(ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
+int uci_cmd_set     (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
+int uci_cmd_get     (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
+int uci_cmd_commit  (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
+int uci_cmd_revert  (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
 
 int mod_init(void **mod_ctx){
     int rc = MOD_OK;

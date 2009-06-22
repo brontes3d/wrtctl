@@ -9,6 +9,7 @@
 #include <netdb.h>
 
 #include "wrtctl-int.h"
+#include "config.h"
 
 int accept_connection( ns_t ns );
 int load_modules(mlh_t ml, char *modules);
@@ -303,7 +304,7 @@ int load_modules(mlh_t ml, char *modules){
     char *ret = NULL;
 
     if ( !(mod_dir = getenv("WRTCTL_MODULE_DIR")) )
-        mod_dir = "/usr/libexec/wrtctl/modules";
+        mod_dir = DEFAULT_MODULE_DIR;
                     
     tok = strtok(modules, " ,");
     while ( tok ){

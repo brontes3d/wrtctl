@@ -12,6 +12,7 @@ int main(int argc, char **argv){
     int rc = 0;
     char *modules = NULL;
     char *port = NULL;
+    char *module_path = NULL;
 
     ns_t ns = NULL;
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv){
                 daemonize = false;
                 break;
             case 'M':
-                if ( setenv("WRTCTL_MODULE_DIR", optarg, 1) != 0 ){
+                if ( setenv("WRTCTL_MODULE_DIR", optarg, 1) != 0){
                     perror("setenv: ");
                     rc = errno;
                 }
@@ -62,11 +63,9 @@ int main(int argc, char **argv){
         if ( rc != 0 ) break;
     }
 
-    if ( !port && !(port = strdup("1337")) ){
-        perror("strdup: ");
-        rc = errno;
-    }
- 
+    if ( !port )
+        port = WRTCTLD_DEFAULT_PORT;
+    
     if ( rc != 0 )
         exit(EXIT_FAILURE);
        

@@ -1,6 +1,8 @@
 
 bin_PROGRAMS = wrtctl
+if BUILD_WRTCTLD
 sbin_PROGRAMS = wrtctld
+endif
 
 wrtctl_SOURCES = wrtctl.c
 wrtctl_LDADD = $(top_builddir)/src/libwrtctl/libwrtctl.la -luci

@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 
+#define WRTCTLD_DEFAULT_PORT "2450"
+
 #define MAX_PACKET_SIZE (uint32_t)1024*1024
 
 char *net_strerror(int err);

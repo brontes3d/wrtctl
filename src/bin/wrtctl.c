@@ -305,10 +305,7 @@ int main(int argc, char **argv){
                 }
                 break;
             case 'p':
-                if ( !(port = strdup(optarg)) ){
-                    perror("strdup: ");
-                    rc = errno;
-                }
+                port = optarg;
                 break;
             default:
                 fprintf(stderr, "Unknown command -%c%s.\n",
@@ -332,7 +329,7 @@ int main(int argc, char **argv){
     }
 
     if ( !port )
-        port = "2450";
+        port = WRTCTLD_DEFAULT_PORT;
 
     if ( (rc = alloc_client(&nc, stderr)) != NET_OK ){
         fprintf(stderr, "alloc_client failed: %s.\n", net_strerror(rc));
@@ -343,7 +340,9 @@ int main(int argc, char **argv){
         fprintf(stderr, "create_conn failed: %s.\n", net_strerror(rc));
         goto done;
     }
-    
+   
+    free(target); target = NULL;
+
     if ( ! subsystem || ! command ){
         fprintf(stderr, "Invalid command line, no subsystem and/or command specified.\n");
         rc = EINVAL;
@@ -368,6 +367,7 @@ int main(int argc, char **argv){
 done:
     if ( command ) free(command);
     if ( subsystem ) free(subsystem);
+    if ( target ) free(target);
     close_conn(nc);
     if (nc) free(nc);
     exit( rc == 0 ? EXIT_SUCCESS : EXIT_FAILURE );
