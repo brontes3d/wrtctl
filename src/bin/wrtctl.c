@@ -352,7 +352,7 @@ int main(int argc, char **argv){
     if ( !port )
         port = WRTCTLD_DEFAULT_PORT;
 
-    if ( (rc = alloc_client(&nc, stderr)) != NET_OK ){
+    if ( (rc = alloc_client(&nc, false, verbose)) != NET_OK ){
         fprintf(stderr, "alloc_client failed: %s.\n", net_strerror(rc));
         goto done;
     }

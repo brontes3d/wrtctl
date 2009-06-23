@@ -8,12 +8,13 @@
 
 extern int errno;
 
-int alloc_client(nc_t *nc, FILE *logfd){
+int alloc_client(nc_t *nc, bool enable_log, bool verbose){
     (*nc) = NULL;
     if ( !((*nc) = (nc_t)malloc(sizeof(struct net_client))) ){
         return NET_ERR_MEM;
     }
-    (*nc)->logfd = logfd;
+    (*nc)->enable_log = enable_log;
+    (*nc)->verbose = verbose;
     (*nc)->dd = NULL;
     return NET_OK;
 }

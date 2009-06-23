@@ -16,7 +16,7 @@ int load_modules(mlh_t ml, char *modules);
 void unload_modules(mlh_t ml);
 int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp);
 
-int create_ns(ns_t *ns, char *port, char *module_list){
+int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool verbose){
     int rc = NET_OK;
     md_t daemon_mod = NULL;
     char *shutdown_path = NULL;
@@ -29,10 +29,11 @@ int create_ns(ns_t *ns, char *port, char *module_list){
 
     (*ns)->shutdown = false;
     (*ns)->ctx = NULL;
-    (*ns)->listen_fd = -1;
     (*ns)->server_loop = default_server_loop;
     (*ns)->handler = default_handler;
     (*ns)->shutdown_dd = default_shutdown_dd;
+    (*ns)->enable_log = enable_log;
+    (*ns)->verbose = verbose;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
@@ -114,6 +115,7 @@ done:
 int accept_connection(ns_t ns){
     dd_t dd;
     int fd, rc;
+
 
     if ( (fd = accept( ns->listen_fd, NULL, (socklen_t)0)) < 0 ){
         rc = NET_ERR;

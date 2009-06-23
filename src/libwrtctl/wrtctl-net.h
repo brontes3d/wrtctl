@@ -3,8 +3,27 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <syslog.h>
 
 #define WRTCTLD_DEFAULT_PORT "2450"
+
+/* Can be used with both net_client and net_server types */
+#define info(ctx, str...) \
+    if ( ctx->verbose ) { \
+        if ( ctx->enable_log )  syslog(LOG_INFO, str); \
+        printf(str); \
+    }
+
+#define log(ctx, str...) \
+    if ( ctx->enable_log )  syslog(LOG_NOTICE, str); \
+    if ( ctx->verbose ) printf(str);
+    
+#define err(ctx, str...) \
+    if ( ctx->enable_log ) syslog(LOG_ERR, str); \
+    if ( ctx->verbose ) fprintf(stderr, str);
+
+#define err_rc(ctx, rc, str...) \
+    if ( rc != 0 ) err(ctx, str);
 
 #define MAX_PACKET_SIZE (uint32_t)1024*1024
 
@@ -97,8 +116,9 @@ struct net_server {
     int     port;
     int     listen_fd;
     bool    shutdown;
-    FILE    *logfd;
     void    *ctx;
+    bool    enable_log;
+    bool    verbose;
 
     char    *shutdown_path;
 
@@ -114,13 +134,14 @@ struct net_server {
         if ( (x)->shutdown_path ) \
             free( (x)->shutdown_path ); \
         free( (x) ); \
-    }
+    } \
+    closelog();
 
 /* Creates a net_server structure on the given port.  Modules is a string, seperated by
  * commas, of the modules that need to be loaded.
  *  Returns a net_errno.
  */
-int create_ns( ns_t *ns, char *port, char *modules );
+int create_ns( ns_t *ns, char *port, char *modules, bool enable_log, bool verbose );
 
 /* Default server loop.  Runs through connections, accepts and hands any packets off
  * to the server handler.
@@ -142,14 +163,15 @@ void default_shutdown_dd( ns_t, dd_t dd );
 
 
 struct net_client {
-    FILE    *logfd;
     dd_t    dd;
+    bool    enable_log;
+    bool    verbose;
 };
 
 /* Create a client, caller is responsible for freeing the allocated structure.
  *  Returns a net_error.
  */
-int alloc_client(nc_t *nc, FILE *logfd);
+int alloc_client(nc_t *nc, bool enable_log, bool verbose);
 
 /* Create a client connection to the specified server.
  *  Returns a net_error.

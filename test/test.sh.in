@@ -5,7 +5,7 @@ topdir="$(readlink -f ${testdir}/../)"
 port="2450"
 moddir="@TOP_BUILDDIR@/src/mods/"
 
-wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir}"
+wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir} -f -v"
 wrtctlp="@TOP_BUILDDIR@/src/bin/wrtctl -p ${port} -t localhost"
 
 export WRTCTL_UCI_CONFDIR=${testdir}/config
@@ -246,7 +246,7 @@ test_sys_cmd_initd() {
 }
 
 start_daemon() {
-    ${wrtctldp} -m sys-cmds,uci-cmds -f &> wrtctld.log &
+    ${wrtctldp} -m sys-cmds,uci-cmds &> wrtctld.log &
     wrtctld_pid=$!
 }
 

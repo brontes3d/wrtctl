@@ -22,6 +22,7 @@ void usage() {
     return;
 }
 
+
  
 /* server, port, modules, debug, daemonize, module_dir, verbose */
 int main(int argc, char **argv){
@@ -89,8 +90,11 @@ int main(int argc, char **argv){
     
     if ( rc != 0 )
         exit(EXIT_FAILURE);
-       
-    if ( (rc = create_ns(&ns, port, modules)) != NET_OK ){
+    
+    if ( daemonize )
+        openlog("wrtctld", LOG_PID, LOG_DAEMON);
+    
+    if ( (rc = create_ns(&ns, port, modules, daemonize, verbose && !daemonize)) != NET_OK ){
         fprintf(stderr, "create_ns: %s\n", net_strerror(rc));
         rc = EXIT_FAILURE;
         goto shutdown;
@@ -101,15 +105,16 @@ int main(int argc, char **argv){
     if ( port )
         free(port);
 
-    ns->logfd = stderr;
+    log(ns, "Daemon started.\n");
     rc = ns->server_loop(ns);
+    err_rc(ns, rc, "Daemon exiting, server_loop returned: %s\n", net_strerror(rc));
    
 
 shutdown:
-    if( ns )
+    if ( ns )
         free_ns(ns);
+    if ( daemonize )
+        closelog();
     exit(rc == NET_OK ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-
-
 
