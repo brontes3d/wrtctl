@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <uci.h>
 #include "wrtctl-net.h"
+#include "config.h"
 
 #ifdef NDEBUG
 #define TIMEOUT 10
@@ -259,10 +260,26 @@ int uci_cmds(nc_t nc, char *cmdline){
     return rc;
 }
 
+void usage() {
+    char *valid_subsystems = "uci, daemon, sys";
+
+    printf("%s\n", PACKAGE_STRING);
+    printf("wrtctl [ARGS]\n");
+    printf("Optional Arguments:\n");
+    printf("\t-h,--help                     This screen.\n");
+    printf("\t-v,--verbose                  Toggle more verbose messages.\n");
+    printf("\t-p,--port <port>              Port to connect to.  Default: %s\n", WRTCTLD_DEFAULT_PORT);
+    printf("\nRequired Arguments:\n");
+    printf("\t-t,--target <target>          Address to connect to.\n");
+    printf("\t-s,--subsystem <subsystem>    Command type.  (%s)\n", valid_subsystems);
+    printf("\t-c,--command '<command>'      Command to be sent.\n");
+    return;
+}
+    
 bool verbose = false;
 
 int main(int argc, char **argv){
-    nc_t nc;
+    nc_t nc = NULL;;
     int rc = 0;
 
     char *command = NULL, *subsystem = NULL, *target = NULL, *port = NULL;
@@ -276,10 +293,11 @@ int main(int argc, char **argv){
             { "subsystem",  required_argument,  NULL,   's'},
             { "command",    required_argument,  NULL,   'c'},
             { "verbose",    no_argument,        NULL,   'v'},
+            { "help",       no_argument,        NULL,   'h'},
             { 0,            0,                  0,      0}
         };
 
-        c = getopt_long(argc, argv, "p:t:s:c:v", lo, &oi);
+        c = getopt_long(argc, argv, "p:t:s:c:vh", lo, &oi);
         if ( c == -1 ) break;
 
         switch (c) {
@@ -307,6 +325,10 @@ int main(int argc, char **argv){
             case 'p':
                 port = optarg;
                 break;
+            case 'h':
+                usage();
+                goto done;
+                break;
             default:
                 fprintf(stderr, "Unknown command -%c%s.\n",
                     c, optarg ? optarg : "");
@@ -320,7 +342,6 @@ int main(int argc, char **argv){
         fprintf(stderr, "Unknown switches on command line.\n");
         exit(EXIT_FAILURE);
     }
-
 
     if ( !target ){
         fprintf(stderr, "No target host (-t, --target) specified.\n");
@@ -365,11 +386,13 @@ int main(int argc, char **argv){
     }
 
 done:
-    if ( command ) free(command);
-    if ( subsystem ) free(subsystem);
-    if ( target ) free(target);
-    close_conn(nc);
-    if (nc) free(nc);
+    if ( command )      free(command);
+    if ( subsystem )    free(subsystem);
+    if ( target )       free(target);
+    if (nc) {
+        close_conn(nc);
+        free(nc);
+    }
     exit( rc == 0 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
