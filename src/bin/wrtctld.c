@@ -3,10 +3,26 @@
 #include <string.h>
 #include <errno.h>
 #include "wrtctl-net.h"
+#include "config.h"
 
 bool verbose = false;
 bool daemonize = true;
 
+void usage() {
+    printf("%s\n", PACKAGE_STRING);
+    printf("wrtctld [ARGS]\n");
+    printf("Optional Arguments:\n");
+    printf("\t-h,--help                     This screen.\n");
+    printf("\t-v,--verbose                  Toggle more verbose messages.\n");
+    printf("\t-f,--foreground               Don't fork to the background.\n");
+    printf("\t-p,--port <port>              Port to listen on.  Default: %s.\n", WRTCTLD_DEFAULT_PORT);
+    printf("\t-m,--modules mod1,mod2...     Modules to load.\n");
+    printf("\t-M,--modules_dir <path>       Directory containing modules.  Default: %s.\n",
+        DEFAULT_MODULE_DIR);
+    return;
+}
+
+ 
 /* server, port, modules, debug, daemonize, module_dir, verbose */
 int main(int argc, char **argv){
     int rc = 0;
@@ -20,6 +36,7 @@ int main(int argc, char **argv){
         int c;
         int oi = 0;
         static struct option lo[] = {
+            { "help",       no_argument,        NULL,   'h'},
             { "port",       required_argument,  NULL,   'p'},
             { "modules",    required_argument,  NULL,   'm'},
             { "verbose",    no_argument,        NULL,   'v'},
@@ -28,7 +45,7 @@ int main(int argc, char **argv){
             { 0,            0,                  0,      0}
         };
 
-        c = getopt_long(argc, argv, "p:m:vfM:", lo, &oi);
+        c = getopt_long(argc, argv, "p:m:vfM:h", lo, &oi);
         if ( c == -1 ) break;
 
         switch (c) {
@@ -55,6 +72,10 @@ int main(int argc, char **argv){
                     perror("setenv: ");
                     rc = errno;
                 }
+                break;
+            case 'h':
+                usage();
+                goto shutdown;
                 break;
             default:
                 rc = EINVAL;
