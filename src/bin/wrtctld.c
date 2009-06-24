@@ -51,10 +51,7 @@ int main(int argc, char **argv){
 
         switch (c) {
             case 'p':
-                if ( !(port = strdup(optarg)) ){
-                    perror("strdup: ");
-                    rc = errno;
-                }
+                port = optarg;
                 break;
             case 'm':
                 if ( !(modules = strdup(optarg)) ){
@@ -102,8 +99,6 @@ int main(int argc, char **argv){
 
     if ( modules )
         free(modules);
-    if ( port )
-        free(port);
 
     log("Daemon started.\n");
     rc = ns->server_loop(ns);
