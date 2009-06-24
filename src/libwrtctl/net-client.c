@@ -32,19 +32,19 @@ int create_conn(nc_t nc, char *to, char *port){
     hints.ai_socktype = SOCK_STREAM;
 
     if ( (rc = getaddrinfo( to, port, &hints, &res )) != 0 ){
-        //NC_DEBUG(nc, "%s: getaddrinfo %s\n", __func__, gai_strerror(rc));
+        err("getaddrinfo %s\n", gai_strerror(rc));
         rc = NET_ERR;
         goto done;
     }
         
     if( (fd = socket( AF_INET, SOCK_STREAM, res->ai_protocol)) == -1 ){
-        //NC_DEBUG(nc, "%s: socket %s\n", __func__, strerror(errno));
+        err("socket %s\n", strerror(errno));
         rc = NET_ERR_FD;
         goto done;
     }
 
     if( connect( fd, res->ai_addr, res->ai_addrlen ) == -1 ){
-        //NC_DEBUG(nc, "%s: connect %s\n", __func__, strerror(errno));
+        err("connect %s\n", strerror(errno));
         rc = NET_ERR;
         goto done;
     }
@@ -61,7 +61,7 @@ int wait_on_response(nc_t nc, struct timeval *timeout, bool send_packets){
     fd_set incoming_fd;
 
     if ( send_packets && (rc = flush_sendq(nc->dd)) != NET_OK ){
-        //NC_DEBUG(nc, "%s: flush_sendq returned %d\n", __func__, rc);
+        err("flush_sendq returned %d\n", rc);
         return rc;
     }
     
@@ -69,13 +69,13 @@ int wait_on_response(nc_t nc, struct timeval *timeout, bool send_packets){
     FD_SET(nc->dd->fd, &incoming_fd);
 
     if ( select(nc->dd->fd+1, &incoming_fd, NULL, NULL, timeout) == -1 ){
-        //NC_DEBUG(nc, "%s: select %s\n", __func__, strerror(errno));
+        err("select %s\n", strerror(errno));
         rc = NET_ERR_FD;
         return rc;
     }
 
     if ( !FD_ISSET(nc->dd->fd, &incoming_fd) ){
-        //NC_DEBUG(nc, "%s: select timeout.\n", __func__);
+        err("Timeout waiting for response from %s.\n", nc->dd->host);
         return NET_ERR_TIMEOUT;
     }
 
