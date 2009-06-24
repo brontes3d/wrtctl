@@ -105,9 +105,9 @@ int main(int argc, char **argv){
     if ( port )
         free(port);
 
-    log(ns, "Daemon started.\n");
+    log("Daemon started.\n");
     rc = ns->server_loop(ns);
-    err_rc(ns, rc, "Daemon exiting, server_loop returned: %s\n", net_strerror(rc));
+    err_rc(rc, "Daemon exiting, server_loop returned: %s\n", net_strerror(rc));
    
 
 shutdown:

@@ -32,8 +32,9 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
     (*ns)->server_loop = default_server_loop;
     (*ns)->handler = default_handler;
     (*ns)->shutdown_dd = default_shutdown_dd;
-    (*ns)->enable_log = enable_log;
-    (*ns)->verbose = verbose;
+    
+    wrtctl_enable_log = enable_log;
+    wrtctl_verbose = verbose;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
@@ -41,7 +42,7 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
     hints.ai_flags = AI_PASSIVE;
 
     if ( (rc = getaddrinfo(NULL, port, &hints, &res)) != 0 ){
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rc));
+        err("getaddrinfo: %s\n", gai_strerror(rc));
         rc = NET_ERR_FD;
         goto err;
     }

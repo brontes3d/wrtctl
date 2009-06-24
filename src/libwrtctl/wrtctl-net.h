@@ -1,3 +1,5 @@
+#ifndef __WRTCTL_NET
+#define __WRTCTL_NET
 #include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
@@ -7,23 +9,27 @@
 
 #define WRTCTLD_DEFAULT_PORT "2450"
 
+/* Defined in net-common.c, modified by either ns_alloc or nc_alloc  */
+extern bool wrtctl_verbose;
+extern bool wrtctl_enable_log;
+
 /* Can be used with both net_client and net_server types */
-#define info(ctx, str...) \
-    if ( ctx->verbose ) { \
-        if ( ctx->enable_log )  syslog(LOG_INFO, str); \
+#define info(str...) \
+    if ( wrtctl_verbose ) { \
+        if ( wrtctl_enable_log )  syslog(LOG_INFO, str); \
         printf(str); \
     }
 
-#define log(ctx, str...) \
-    if ( ctx->enable_log )  syslog(LOG_NOTICE, str); \
-    if ( ctx->verbose ) printf(str);
+#define log(str...) \
+    if ( wrtctl_enable_log )  syslog(LOG_NOTICE, str); \
+    if ( wrtctl_verbose ) printf(str);
     
-#define err(ctx, str...) \
-    if ( ctx->enable_log ) syslog(LOG_ERR, str); \
-    if ( ctx->verbose ) fprintf(stderr, str);
+#define err(str...) \
+    if ( wrtctl_enable_log ) syslog(LOG_ERR, str); \
+    if ( wrtctl_verbose ) fprintf(stderr, __func__);fprintf(stderr,": " str);
 
-#define err_rc(ctx, rc, str...) \
-    if ( rc != 0 ) err(ctx, str);
+#define err_rc(rc, str...) \
+    if ( rc != 0 ) err(str);
 
 #define MAX_PACKET_SIZE (uint32_t)1024*1024
 
@@ -210,6 +216,4 @@ struct packet {
     void        *data;
     STAILQ_ENTRY(packet) packet_queue;
 };
-
-
-
+#endif

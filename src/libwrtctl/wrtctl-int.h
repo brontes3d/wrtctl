@@ -1,3 +1,5 @@
+#ifndef __WRTCTL_INT
+#define __WRTCTL_INT
 #include "wrtctl-net.h"
 
 /* Allocate a d_data pointer, caller must free the data.
@@ -64,5 +66,4 @@ char *  mod_strerror    (int err);
 #define DAEMON_MOD_NAME "daemon-cmds"
 #define DAE_CTX_CAST(x,y) ns_t x = (ns_t)y
 char mod_errstr[MOD_ERRSTR_LEN];
-
-
+#endif

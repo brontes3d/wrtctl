@@ -13,8 +13,8 @@ int alloc_client(nc_t *nc, bool enable_log, bool verbose){
     if ( !((*nc) = (nc_t)malloc(sizeof(struct net_client))) ){
         return NET_ERR_MEM;
     }
-    (*nc)->enable_log = enable_log;
-    (*nc)->verbose = verbose;
+    wrtctl_enable_log = enable_log;
+    wrtctl_verbose = verbose;
     (*nc)->dd = NULL;
     return NET_OK;
 }
