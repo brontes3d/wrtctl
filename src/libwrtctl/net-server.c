@@ -101,6 +101,8 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
         }
     }
 
+    init_tpl_hook();
+
     goto done;
 
 err:

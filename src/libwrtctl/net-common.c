@@ -303,3 +303,17 @@ done:
         tpl_free(tn);
     return rc;
 }
+
+int wrtctl_tpl_oops(const char *format, ... ){
+    int rc = 0;
+    if ( wrtctl_verbose )
+        rc = fprintf(stderr, format);
+    if ( wrtctl_enable_log )
+        syslog(LOG_ERR, format);
+    return rc > 0 ? rc : 1;
+}
+
+void init_tpl_hook(){
+    extern tpl_hook_t tpl_hook;
+    tpl_hook.oops = wrtctl_tpl_oops;
+}

@@ -31,7 +31,10 @@ int flush_sendq( dd_t dd );
 int recv_packet( dd_t dd );
 
 
-
+/* Sets up tpl to report errors to syslog and/or stderr depending on
+ * wrtctl_verbose and wrtctl_enable_log
+ */
+void init_tpl_hook();
 
 /* Module Handling:
  *  Used by wrtctld to allow selection of which commands should be handled.

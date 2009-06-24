@@ -18,6 +18,7 @@ int alloc_client(nc_t *nc, bool enable_log, bool verbose){
     wrtctl_enable_log = enable_log;
     wrtctl_verbose = verbose;
     (*nc)->dd = NULL;
+    init_tpl_hook();
     return NET_OK;
 }
 
