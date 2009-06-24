@@ -248,6 +248,7 @@ test_sys_cmd_initd() {
 start_daemon() {
     ${wrtctldp} -m sys-cmds,uci-cmds &> wrtctld.log &
     wrtctld_pid=$!
+    sleep 0.1
 }
 
 stop_daemon() {
