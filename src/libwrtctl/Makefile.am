@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libwrtctl.la
-include_HEADERS = wrtctl-net.h
+include_HEADERS = wrtctl-net.h wrtctl-log.h
 
-libwrtctl_la_SOURCES = mod.c net-client.c net-common.c net-server.c tpl.c
+libwrtctl_la_SOURCES = mod.c net-client.c net-common.c net-server.c tpl.c wrtctl-log.c
 libwrtctl_la_LIBADD = -ldl
 
 

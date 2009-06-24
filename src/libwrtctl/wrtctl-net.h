@@ -6,30 +6,9 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <syslog.h>
+#include <wrtctl-log.h>
 
 #define WRTCTLD_DEFAULT_PORT "2450"
-
-/* Defined in net-common.c, modified by either ns_alloc or nc_alloc  */
-extern bool wrtctl_verbose;
-extern bool wrtctl_enable_log;
-
-/* Can be used with both net_client and net_server types */
-#define info(str...) \
-    if ( wrtctl_verbose ) { \
-        if ( wrtctl_enable_log )  syslog(LOG_INFO, str); \
-        printf(str); \
-    }
-
-#define log(str...) \
-    if ( wrtctl_enable_log )  syslog(LOG_NOTICE, str); \
-    if ( wrtctl_verbose ) printf(str);
-    
-#define err(str...) \
-    if ( wrtctl_enable_log ) syslog(LOG_ERR, str); \
-    if ( wrtctl_verbose ) fprintf(stderr, __func__);fprintf(stderr,": " str);
-
-#define err_rc(rc, str...) \
-    if ( rc != 0 ) err(str);
 
 #define MAX_PACKET_SIZE (uint32_t)1024*1024
 

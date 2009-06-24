@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
+
+#include <wrtctl-log.h>
 #include "wrtctl-int.h"
 
 char * load_module(mlh_t ml, md_t *mdp, char *module_path){

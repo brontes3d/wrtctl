@@ -9,9 +9,6 @@
 #include "tpl.h"
 #include "wrtctl-int.h"
 
-bool wrtctl_verbose = false;
-bool wrtctl_enable_log = false;
-
 int create_packet(packet_t *p, char *cmd_id, void *data, uint32_t data_len);
 
 //TODO:   Accept sockaddr_in pointer or handle null.

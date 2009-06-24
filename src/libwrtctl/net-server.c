@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <wrtctl-log.h>
 #include "wrtctl-int.h"
 #include "config.h"
 

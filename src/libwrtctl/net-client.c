@@ -4,6 +4,8 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
+
+#include <wrtctl-log.h>
 #include "wrtctl-int.h"
 
 extern int errno;
