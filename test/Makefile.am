@@ -9,5 +9,5 @@ test.sh: test.sh.in
 check: test.sh
 	./test.sh
 
-clean:
+clean-local:
 	rm -rf test.sh savedir config test.log wrtctld.log
