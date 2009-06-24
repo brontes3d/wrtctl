@@ -54,7 +54,7 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
     }
 
     if ( (rc = setsockopt((*ns)->listen_fd, SOL_SOCKET, SO_REUSEADDR, &t, sizeof(int)) == -1) ){
-        fprintf(stderr, "setsockopt: %s\n", strerror(rc));
+        err("setsockopt: %s\n", strerror(rc));
         rc = NET_ERR_FD;
         goto err;
     }
@@ -95,7 +95,7 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
 
     if ( module_list ){
         if ( (rc = load_modules(&((*ns)->mod_list), module_list)) != MOD_OK ){
-            fprintf(stderr, "load_modules failed, %s\n", mod_strerror(rc));
+            err("load_modules failed, %s\n", mod_strerror(rc));
             rc = NET_ERR;
             goto err;
         }
@@ -132,7 +132,7 @@ int accept_connection(ns_t ns){
         return rc;
     }
    
-    //NS_DEBUG("Accepted new connection from %s (%d)\n", dd->host, dd->fd);
+    info("Accepted new connection from %s (%d)\n", dd->host, dd->fd);
     STAILQ_INSERT_TAIL( &(ns->dd_list), dd, dd_queue );
     return NET_OK;
 }
@@ -143,7 +143,7 @@ int default_server_loop(ns_t ns){
     dd_t dd_iter, dd_tmp;
     struct timeval timeout;
 
-    //NS_DEBUG("Starting %s\n", __func__);
+    info("Starting %s\n", __func__);
     while( !ns->shutdown ){
         rc = NET_OK;
         FD_ZERO(&incoming_fd);
@@ -181,6 +181,7 @@ int default_server_loop(ns_t ns){
                         if ( !STAILQ_EMPTY(&(dd_iter->sendq)) || !STAILQ_EMPTY(&(dd_iter->recvq)) )
                             break;
                     default:
+                        info("Closing connection to %s due to empty recv()\n", dd_iter->host);
                         dd_iter->shutdown = true;
                         break;
                 }
@@ -191,8 +192,11 @@ int default_server_loop(ns_t ns){
                 continue;
             }
 
-            if ( (rc = ns->handler(ns, dd_iter)) != NET_OK )
+            if ( (rc = ns->handler(ns, dd_iter)) != NET_OK ){
+                info("Closing connection to %s due to handler error: %s\n",
+                    dd_iter->host, net_strerror(rc));
                 dd_iter->shutdown = true;
+            }
             FD_SET(dd_iter->fd, &outgoing_fd2);
         }
 
@@ -206,6 +210,8 @@ int default_server_loop(ns_t ns){
         STAILQ_FOREACH(dd_iter, &(ns->dd_list), dd_queue){
             if ( FD_ISSET(dd_iter->fd, &outgoing_fd1) || FD_ISSET(dd_iter->fd, &outgoing_fd2) ){
                 if ( (rc = flush_sendq(dd_iter)) != NET_OK ){
+                    info("Closing connection to %s due to send error: %s\n",
+                        dd_iter->host, net_strerror(rc));
                     dd_iter->shutdown = true;
                 }
             }
@@ -224,7 +230,6 @@ int default_server_loop(ns_t ns){
     shutdown(ns->listen_fd, SHUT_RDWR);
     close(ns->listen_fd);
  
-    //NS_DEBUG("Exiting %s (%d)\n", __func__, rc);
     return rc;
 }
 
@@ -243,9 +248,7 @@ int default_handler( ns_t ns, dd_t dd ){
             struct net_cmd nc = {0, NULL, NULL};
 
             if ( (nrc = unpack_net_cmd_packet(&nc, p)) != NET_OK ){
-                fprintf(stderr, "%s: unpack_net_cmd_packet: %s\n",
-                    __func__, net_strerror(nrc));
-                /* TODO:  Report this. */
+                err("unpack_net_cmd_packet: %s\n", net_strerror(nrc));
                 break;
             }
 
@@ -261,9 +264,7 @@ int default_handler( ns_t ns, dd_t dd ){
                     &out_packet);
 
                 if ( hrc != MOD_OK ){
-                    fprintf(stderr, "%s: %s handler error: %s.\n",
-                        __func__, md->mod_name, mod_strerror(hrc) );
-                    /* TODO:  Report this. */
+                    err("%s handler error: %s.\n", md->mod_name, mod_strerror(hrc) );
                     break;
                 }
 
@@ -275,14 +276,10 @@ int default_handler( ns_t ns, dd_t dd ){
                     free(nc.value);
             }
             if ( !handled ){
-                fprintf(stderr, "%s:  Unhandled net command for subsystem %s\n",
-                    __func__, nc.subsystem);
-                /* TODO:  Report this. */
+                err("Unhandled net command for subsystem %s\n", nc.subsystem);
             }
         } else {
-            fprintf(stderr, "%s:  Unhandled packet of type %s\n",
-                __func__, p->cmd_id);
-            /* TODO:  Report this. */
+            err("Unhandled packet of type %s\n", p->cmd_id);
         }
 
         STAILQ_REMOVE( &(dd->recvq), p, packet, packet_queue );
@@ -312,11 +309,12 @@ int load_modules(mlh_t ml, char *modules){
                     
     tok = strtok(modules, " ,");
     while ( tok ){
+        info("Loading %s.so from %s\n", tok, mod_dir);
         if ( snprintf(mod_path, MAXPATHLEN, "%s/%s.so", mod_dir, tok) >= MAXPATHLEN ){
-            fprintf(stderr, "Module path too long, %s/%s.so\n", mod_dir, tok);
+            err("Module path too long, %s/%s.so\n", mod_dir, tok);
             rc = MOD_ERR_LOAD;
         } else if ( (ret = load_module(ml, NULL, mod_path)) ) {
-            fprintf(stderr, "Error loading %s/%s.so, %s\n", mod_dir, tok, ret);
+            err("Error loading %s/%s.so, %s\n", mod_dir, tok, ret);
             rc = MOD_ERR_LOAD;
             free(ret);
             ret = NULL;
@@ -330,6 +328,7 @@ int load_modules(mlh_t ml, char *modules){
 void unload_modules(mlh_t ml){
     md_t md, md_tmp;
     STAILQ_FOREACH_SAFE(md, ml, mod_data_list, md_tmp){
+        info("Unloading %s\n", md->mod_name);
         unload_module(ml, md);
     }
     return;
@@ -342,8 +341,8 @@ int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
     uint16_t out_rc = MOD_OK;
     char *out_str = NULL;
 
-    //NS_DEBUG("%s: cmd=%u, args='%s'\n",
-        //__func__, cmd->id, cmd->value ? cmd->value : "(null)");
+    info("daemon_mod_handler in: cmd=%u, args='%s'\n", 
+        cmd->id, cmd->value ? cmd->value : "(null)");
 
     switch ( cmd->id ){
         case DAEMON_CMD_PING:
@@ -352,8 +351,16 @@ int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
         case DAEMON_CMD_SHUTDOWN:
             rc = daemon_cmd_reboot(ns, NULL, &out_rc, &out_str);
             break;
+        default:
+            err("daemon_mod_handler:  Unknown command '%u'\n", cmd->id);
+            out_rc = NET_ERR_INVAL;
+            asprintf(&out_str, "Unknown command");
+            break;
     }
     rc = create_net_cmd_packet(outp, out_rc, DAEMON_CMD_MAGIC, out_str);
+    if ( out_rc != NET_OK )
+        err("daemon_mod_hander returned %u, %s\n",
+            out_rc, out_str ? out_str : "-");
     if ( out_str )
         free(out_str);
     return rc;
