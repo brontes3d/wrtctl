@@ -73,15 +73,23 @@ int mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
     uint16_t out_rc;
     char *out_str = NULL;
 
-    //SYSH_DEBUG("%s: cmd=%u, id=%s\n",
-        //__func__, cmd->id, cmd->value ? cmd->value: "(null)");
+    info("sys-cmds_handler in: cmd=%u, args='%s'\n",
+        cmd->id, cmd->value ? cmd->value : "(null)");
 
     switch ( cmd->id ){
         case SYS_CMD_INITD:
             rc = sys_cmd_initd(syshc, cmd->value, &out_rc, &out_str);
             break;
+        default:
+            err("sys-cmds_handler:  Unknown command '%u'\n", cmd->id);
+            out_rc = NET_ERR_INVAL;
+            asprintf(&out_str, "Unknown command");
+            break;
     }
     rc = create_net_cmd_packet(outp, out_rc, SYS_CMDS_MAGIC, out_str);
+    if ( out_rc != NET_OK )
+        err("sys-cmds_handler returned %u, %s\n",
+            out_rc, out_str ? out_str : "-" );
     if ( out_str )
         free(out_str);
     return rc;
@@ -113,7 +121,6 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
         goto done;
     }
     if ( access(dpath, X_OK) != 0 ){
-        //SYSH_DEBUG("%s:  Cannot execute %s\n", __func__, dpath);
         sys_rc = EPERM;
         asprintf(out_str, "access:  %s", strerror(errno));
         goto done;
