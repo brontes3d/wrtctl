@@ -159,13 +159,13 @@ int recv_packet(dd_t dd){
         bremain -= (uint32_t)n;
         bp += (size_t)n;
     }
+        
+    if ( errno == EAGAIN || errno == EWOULDBLOCK )
+        return NET_ERR_CONNRESET;
 
-    if ( n < 0 ){
-        err("recv_packet(recv): %s\n", strerror(errno));
-        rc = NET_ERR_CONNRESET;
-    }
-    
     if ( bremain != 0 ){
+        if ( n < 0 )
+            err("recv_packet(recv): %s\n", strerror(errno));
         err("recv_packet: Could not recv full packet length.\n");
         rc = NET_ERR_CONNRESET;
         goto err;
