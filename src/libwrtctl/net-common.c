@@ -31,14 +31,18 @@ int create_dd(dd_t *dd, int fd){
 
     if ( getpeername(fd, (struct sockaddr *)&sa, &socklen) < 0
         || socklen > sizeof(struct sockaddr_in)){
+
+        err("getpeername: %s\n", strerror(errno));
         free_dd(dd);
         if ( errno == ENOTCONN )
             return NET_ERR_CONNRESET;
         return NET_ERR_MEM;
     } else {
         char buf[512];
+        int rc;
 
-        if ( getnameinfo( (struct sockaddr *)&sa, socklen, buf, 512, NULL, 0, 0) != 0 ){
+        if ( (rc = getnameinfo( (struct sockaddr *)&sa, socklen, buf, 512, NULL, 0, 0)) != 0 ){
+            err("getnameinfo: %s\n", gai_strerror(rc));
             free_dd(dd);
             return NET_ERR_NS;
         }
@@ -133,6 +137,7 @@ int send_packet(dd_t dd, packet_t p){
             dd->dd_errno = NET_ERR;
             if ( errno == ECONNRESET )
                 dd->dd_errno = NET_ERR_CONNRESET;
+            err("send_packet(send): %s\n", strerror(errno));
             break;
         }
         sent += (uint32_t)n;
@@ -155,7 +160,13 @@ int recv_packet(dd_t dd){
         bp += (size_t)n;
     }
 
-    if ( n < 0 || bremain != 0 ){
+    if ( n < 0 ){
+        err("recv_packet(recv): %s\n", strerror(errno));
+        rc = NET_ERR_CONNRESET;
+    }
+    
+    if ( bremain != 0 ){
+        err("recv_packet: Could not recv full packet length.\n");
         rc = NET_ERR_CONNRESET;
         goto err;
     }
@@ -182,6 +193,9 @@ int recv_packet(dd_t dd){
     }
 
     if ( bremain != 0 && n <= 0 ){
+        err("recv_packet:  Did not recv full packet of length %u\n", p_len);
+        if ( n < 0 )
+            err("recv_packet(recv): %s\n", strerror(errno));
         rc = NET_ERR_CONNRESET;
         goto err;
     }
