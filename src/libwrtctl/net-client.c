@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"

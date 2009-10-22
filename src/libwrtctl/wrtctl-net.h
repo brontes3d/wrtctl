@@ -173,7 +173,7 @@ void close_conn(nc_t nc);
  * packet is considered a response.
  *  Returns a net_error
  */
-int wait_on_reponse(nc_t nc, struct timeval *timeout, bool send_packets);
+int wait_on_response(nc_t nc, struct timeval *timeout, bool send_packets);
 
 
 /* Connection data structure */

@@ -26,9 +26,12 @@ int     mod_init        (void **ctx);
 void    mod_destroy     (void *ctx);
 int     mod_handler     (void *ctx, net_cmd_t cmd, packet_t *outp);
 
+
 typedef struct sysh_ctx {
     char    *initd_dir;
 } *sysh_ctx_t;
+
+int     sys_cmd_initd   (sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_str);
 
 int mod_init(void **mod_ctx){
     int rc = MOD_OK;
