@@ -10,7 +10,7 @@
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"
-#include "config.h"
+#include <config.h>
 
 int accept_connection( ns_t ns );
 int load_modules(mlh_t ml, char *modules);

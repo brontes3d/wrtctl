@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <endian.h>
 #include <sys/socket.h>
