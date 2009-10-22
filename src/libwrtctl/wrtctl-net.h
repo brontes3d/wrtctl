@@ -4,8 +4,14 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <sys/types.h>
-#include <sys/queue.h>
 #include <syslog.h>
+
+#ifdef INTERNAL_QUEUE_H
+#include "queue.h"
+#else
+#include <sys/queue.h>
+#endif
+
 #include <wrtctl-log.h>
 
 #define WRTCTLD_DEFAULT_PORT "2450"

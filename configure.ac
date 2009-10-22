@@ -57,11 +57,15 @@ AC_ARG_WITH( moduledir,
     moduledir="${libdir}/wrtctl")
 
 AC_ARG_ENABLE( wrtctld,
-    [  --enable-wrtctld        Build the wrtctl daemon [default=yes])],
+    [  --enable-wrtctld            Build the wrtctl daemon [[default=yes]] ],
     build_wrtctld="$enableval",
     build_wrtctld=yes)
 AM_CONDITIONAL(BUILD_WRTCTLD, test x"$build_wrtctld" = xyes)
 
+AC_ARG_ENABLE( internal-queue-h,
+    [  --enable-internal-queue-h   Use internal copy of queue.h (for older systems) [[default=no]] ],
+    AC_DEFINE_UNQUOTED( [INTERNAL_QUEUE_H], [1], ["Use internal copy of queue.h"])
+)
 
 tmp_moduledir="`expr "$moduledir" : '${exec_prefix}\(.*\)'`"
 if test -n "$tmp_moduledir"; then
