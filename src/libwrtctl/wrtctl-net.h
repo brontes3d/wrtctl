@@ -4,8 +4,14 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <sys/types.h>
-#include <sys/queue.h>
 #include <syslog.h>
+
+#ifdef INTERNAL_QUEUE_H
+#include "queue.h"
+#else
+#include <sys/queue.h>
+#endif
+
 #include <wrtctl-log.h>
 
 #define WRTCTLD_DEFAULT_PORT "2450"
@@ -173,7 +179,7 @@ void close_conn(nc_t nc);
  * packet is considered a response.
  *  Returns a net_error
  */
-int wait_on_reponse(nc_t nc, struct timeval *timeout, bool send_packets);
+int wait_on_response(nc_t nc, struct timeval *timeout, bool send_packets);
 
 
 /* Connection data structure */

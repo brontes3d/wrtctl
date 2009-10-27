@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -234,9 +236,7 @@ done:
 
 int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str){
     int uci_rc = UCI_OK;
-    int rc = 0;
     struct uci_ptr ucip;
-    char *i;
     bool restore_pso = false;
     char *val_str = NULL;
 
@@ -486,7 +486,6 @@ int uci_list_package_contents(ucih_ctx_t ucihc, char *package_name){
 }
 
 int uci_list_section(ucih_ctx_t ucihc, uci_section_t s){
-    int rc;
     uci_element_t e, _e = NULL;
     uci_option_t o = NULL;
 
@@ -511,7 +510,7 @@ int uci_list_section(ucih_ctx_t ucihc, uci_section_t s){
 
 // Caller must free the returned string.
 int uci_find_section(ucih_ctx_t ucihc, char **s, char *p, char *o ){
-    uci_element_t e, se, oe = NULL;
+    uci_element_t se, oe = NULL;
     uci_package_t package = NULL;
     uci_section_t section = NULL;
     uci_option_t option = NULL;

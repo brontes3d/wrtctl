@@ -6,6 +6,8 @@ AM_INIT_AUTOMAKE([dist-bzip2 -Wno-portability])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 
+AC_GNU_SOURCE
+
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_LIBTOOL
@@ -13,6 +15,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
+
 
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([uci], [uci_alloc_context])
@@ -47,17 +50,22 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([ftruncate memset munmap select setenv socket strchr strdup strerror strnlen strspn])
 
+
 AC_ARG_WITH( moduledir,
     [  --with-moduledir=DIR    Base directory for dynamically loadable modules],
     moduledir="$withval",
     moduledir="${libdir}/wrtctl")
 
 AC_ARG_ENABLE( wrtctld,
-    [  --enable-wrtctld        Build the wrtctl daemon [default=yes])],
+    [  --enable-wrtctld            Build the wrtctl daemon [[default=yes]] ],
     build_wrtctld="$enableval",
     build_wrtctld=yes)
 AM_CONDITIONAL(BUILD_WRTCTLD, test x"$build_wrtctld" = xyes)
 
+AC_ARG_ENABLE( internal-queue-h,
+    [  --enable-internal-queue-h   Use internal copy of queue.h (for older systems) [[default=no]] ],
+    AC_DEFINE_UNQUOTED( [INTERNAL_QUEUE_H], [1], ["Use internal copy of queue.h"])
+)
 
 tmp_moduledir="`expr "$moduledir" : '${exec_prefix}\(.*\)'`"
 if test -n "$tmp_moduledir"; then

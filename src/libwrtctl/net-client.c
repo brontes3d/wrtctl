@@ -1,9 +1,12 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"

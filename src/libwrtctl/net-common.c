@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <endian.h>
 #include <sys/socket.h>
@@ -9,7 +11,8 @@
 #include "tpl.h"
 #include "wrtctl-int.h"
 
-int create_packet(packet_t *p, char *cmd_id, void *data, uint32_t data_len);
+int     create_packet   (packet_t *p, char *cmd_id, void *data, uint32_t data_len);
+int     send_packet     (dd_t dd, packet_t p);
 
 //TODO:   Accept sockaddr_in pointer or handle null.
 int create_dd(dd_t *dd, int fd){
@@ -148,7 +151,7 @@ int send_packet(dd_t dd, packet_t p){
 
 int recv_packet(dd_t dd){
     void        *buf = NULL, *bp = NULL;
-    uint32_t    bsize, bremain, p_len = 0;
+    uint32_t    bremain, p_len = 0;
     int         n, rc;
     packet_t    p = NULL;
 

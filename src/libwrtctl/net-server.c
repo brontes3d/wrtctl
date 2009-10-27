@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -7,15 +9,18 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <time.h>
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"
-#include "config.h"
 
-int accept_connection( ns_t ns );
-int load_modules(mlh_t ml, char *modules);
-void unload_modules(mlh_t ml);
-int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp);
+int     accept_connection   ( ns_t ns );
+int     load_modules        (mlh_t ml, char *modules);
+void    unload_modules      (mlh_t ml);
+
+int     daemon_mod_handler  (void *ctx, net_cmd_t cmd, packet_t *outp);
+int     daemon_cmd_ping     (ns_t ns, char *unused, uint16_t *out_rc, char **out_str);
+int     daemon_cmd_reboot   (ns_t ns, char *unused, uint16_t *out_rc, char **out_str);
 
 int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool verbose){
     int rc = NET_OK;
@@ -379,7 +384,7 @@ int daemon_cmd_ping(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
         goto done;
     }
 
-    if ( asprintf(out_str, "%lu", (uint32_t)t) == -1 ){
+    if ( asprintf(out_str, "%u", (uint32_t)t) == -1 ){
         sys_rc = ENOMEM;
         goto done;
     }

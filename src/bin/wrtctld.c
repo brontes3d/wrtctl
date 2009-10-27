@@ -1,9 +1,10 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
 #include <errno.h>
 #include "wrtctl-net.h"
-#include "config.h"
 
 bool verbose = false;
 bool daemonize = true;
@@ -29,7 +30,6 @@ int main(int argc, char **argv){
     int rc = 0;
     char *modules = NULL;
     char *port = NULL;
-    char *module_path = NULL;
 
     ns_t ns = NULL;
 

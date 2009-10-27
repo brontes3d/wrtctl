@@ -1,10 +1,11 @@
+#include <config.h>
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <getopt.h>
 #include <uci.h>
 #include "wrtctl-net.h"
-#include "config.h"
 
 #ifdef NDEBUG
 #define TIMEOUT 10
