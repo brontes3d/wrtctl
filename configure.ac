@@ -67,6 +67,29 @@ AC_ARG_ENABLE( internal-queue-h,
     AC_DEFINE_UNQUOTED( [INTERNAL_QUEUE_H], [1], ["Use internal copy of queue.h"])
 )
 
+AC_ARG_ENABLE( stunnel,
+    [  --enable-stunnel[=PATH]   Enable stunnel wrappers [[no, /usr/bin/stunnel]]],
+    stunnel_path="$withval",
+    stunnel_path="no")
+
+if test x"$stunnel_path" != xno; then
+    AM_CONDITIONAL(ENABLE_STUNNEL, true)
+    AC_DEFINE_UNQUOTED( [ENABLE_STUNNEL],
+        [],
+        "Enable support for stunnel wrappers.")
+    if test x"$stunnel_path" = xyes; then
+        AC_DEFINE_UNQUOTED( [STUNNEL_PATH],
+            "/usr/bin/stunnel",
+            "Path to stunnel executable." )
+    else
+        AC_DEFINE_UNQUOTED( [STUNNEL_PATH],
+            "$stunnel_path",
+            "Path to stunnel executable." )
+    fi
+else
+    AM_CONDITIONAL(ENABLE_STUNNEL, false)
+fi
+ 
 tmp_moduledir="`expr "$moduledir" : '${exec_prefix}\(.*\)'`"
 if test -n "$tmp_moduledir"; then
     if test x"$prefix" = xNONE; then
@@ -83,6 +106,11 @@ else
         ["${moduledir}"],
         "Default location to look for modules.")
 fi
+
+keydir="`expr "${sysconfdir}"/wrtctl/key.pem : '${prefix}\(.*\)'`" 
+AC_DEFINE_UNQUOTED( [DEFAULT_KEY_PATH],
+    ["$keydir"],
+    "Default key path when using stunnel wrappers")
 
 AC_CONFIG_FILES([
     Makefile

@@ -7,6 +7,10 @@
 #include <uci.h>
 #include "wrtctl-net.h"
 
+#ifdef ENABLE_STUNNEL
+#include "stunnel.h"
+#endif
+
 #ifdef NDEBUG
 #define TIMEOUT 10
 #else
@@ -269,11 +273,17 @@ void usage() {
     printf("Optional Arguments:\n");
     printf("\t-h,--help                     This screen.\n");
     printf("\t-v,--verbose                  Toggle more verbose messages.\n");
-    printf("\t-p,--port <port>              Port to connect to.  Default: %s\n", WRTCTLD_DEFAULT_PORT);
+    printf("\t-p,--port <port>              Port to connect to [%s].\n", WRTCTLD_DEFAULT_PORT);
     printf("\nRequired Arguments:\n");
     printf("\t-t,--target <target>          Address to connect to.\n");
     printf("\t-s,--subsystem <subsystem>    Command type.  (%s)\n", valid_subsystems);
     printf("\t-c,--command '<command>'      Command to be sent.\n");
+#ifdef ENABLE_STUNNEL
+    printf("\nSSL Optional Arguments:\n");
+    printf("\t-C,--ssl_client <port>        Port for local stunnel wrapper [%s].\n", WRTCTL_SSL_PORT);
+    printf("\t-S,--ssl_server <port>        Port for remote stunnel wrapper [%s].\n", WRTCTLD_SSL_PORT);
+    printf("\t-k,--key_path <path>          Path to shared SSL certificate [%s].\n", DEFAULT_KEY_PATH);
+#endif
     return;
 }
     
@@ -285,6 +295,11 @@ int main(int argc, char **argv){
 
     char *command = NULL, *subsystem = NULL, *target = NULL, *port = NULL;
 
+#ifdef ENABLE_STUNNEL
+    char *key_path = NULL, *client_ssl_port = NULL, *server_ssl_port = NULL;
+    stunnel_ctx_t stunnel_ctx = NULL;
+#endif
+
     while ( true ){
         int c;
         int oi = 0;
@@ -295,10 +310,19 @@ int main(int argc, char **argv){
             { "command",    required_argument,  NULL,   'c'},
             { "verbose",    no_argument,        NULL,   'v'},
             { "help",       no_argument,        NULL,   'h'},
+#ifdef ENABLE_STUNNEL
+            { "ssl_client", required_argument,  NULL,   'C'},
+            { "ssl_server", required_argument,  NULL,   'S'},
+            { "key_path",   required_argument,  NULL,   'k'},
+#endif
             { 0,            0,                  0,      0}
         };
 
+#ifdef ENABLE_STUNNEL
+        c = getopt_long(argc, argv, "p:t:s:c:vhC:S:k:", lo, &oi);
+#else
         c = getopt_long(argc, argv, "p:t:s:c:vh", lo, &oi);
+#endif
         if ( c == -1 ) break;
 
         switch (c) {
@@ -330,6 +354,17 @@ int main(int argc, char **argv){
                 usage();
                 goto done;
                 break;
+#ifdef ENABLE_STUNNEL
+            case 'C':
+                client_ssl_port = optarg;
+                break;
+            case 'S':
+                server_ssl_port = optarg;
+                break;
+            case 'k':
+                key_path = optarg;
+                break;
+#endif
             default:
                 fprintf(stderr, "Unknown command -%c%s.\n",
                     c, optarg ? optarg : "");
@@ -357,6 +392,26 @@ int main(int argc, char **argv){
         fprintf(stderr, "alloc_client failed: %s.\n", net_strerror(rc));
         goto done;
     }
+
+#ifdef ENABLE_STUNNEL
+    if ( !key_path )
+        key_path = DEFAULT_KEY_PATH;
+
+    if ( (rc = start_stunnel_client(
+            &stunnel_ctx,
+            target,
+            key_path,
+            port,
+            client_ssl_port,
+            server_ssl_port)) != 0 ){
+        fprintf(stderr, "Failed to start the stunnel wrapper.\n");
+        goto done;
+    }
+    
+    port = client_ssl_port ? client_ssl_port : WRTCTL_SSL_PORT;
+    free(target);
+    asprintf(&target, "localhost");
+#endif
 
     if ( (rc = create_conn(nc, target, port)) != NET_OK ){
         fprintf(stderr, "create_conn failed: %s.\n", net_strerror(rc));
@@ -394,7 +449,10 @@ done:
         close_conn(nc);
         free(nc);
     }
-    exit( rc == 0 ? EXIT_SUCCESS : EXIT_FAILURE );
+#ifdef ENABLE_STUNNEL
+    if ( (stunnel_ctx) )   kill_stunnel( &stunnel_ctx );
+#endif
+     exit( rc == 0 ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 

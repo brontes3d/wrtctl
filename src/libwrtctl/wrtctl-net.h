@@ -14,7 +14,9 @@
 
 #include <wrtctl-log.h>
 
-#define WRTCTLD_DEFAULT_PORT "2450"
+#define WRTCTLD_DEFAULT_PORT    "2450"      /* Unencrypted traffic */
+#define WRTCTL_SSL_PORT         "2451"      /* Local wrtctl stunnel connection */
+#define WRTCTLD_SSL_PORT        "2452"      /* Server wrtctld stunnel connection */
 
 #define MAX_PACKET_SIZE (uint32_t)1024*1024
 

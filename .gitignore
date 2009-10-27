@@ -20,3 +20,4 @@ stamp-h1
 *.lo
 src/bin/wrtctl
 src/bin/wrtctld
+test/stunnel.pem

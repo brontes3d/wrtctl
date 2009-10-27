@@ -7,6 +7,7 @@ moddir="@TOP_BUILDDIR@/src/mods/"
 
 wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir} -f -v"
 wrtctlp="@TOP_BUILDDIR@/src/bin/wrtctl -p ${port} -t localhost"
+key_path="${testdir}/stunnel.pem"
 
 export WRTCTL_UCI_CONFDIR=${testdir}/config
 export WRTCTL_UCI_SAVEDIR=${testdir}/savedir
@@ -78,7 +79,7 @@ fail() {
 }
 
 test_uci_cmd_get() {
-    local p="${wrtctlp} -s uci -c "
+    local p="${wrtctlp} $@ -s uci -c "
 
     echo -n "Testing UCI get commands...  "
     run_test 0 "test\.cfg[0-9]+\.first_opt=1" $p 'get test..first_opt'  || fail
@@ -92,7 +93,7 @@ test_uci_cmd_get() {
 }
 
 test_uci_cmd_set_commit() {
-    local p="${wrtctlp} -s uci -c"
+    local p="${wrtctlp} $@ -s uci -c"
     local path="${WRTCTL_UCI_CONFDIR}/test"
     local spath="${WRTCTL_UCI_SAVEDIR}/test"
     
@@ -133,7 +134,7 @@ test_uci_cmd_set_commit() {
 }
 
 test_uci_cmd_revert() {
-    local p="${wrtctlp} -s uci -c"
+    local p="${wrtctlp} $@ -s uci -c"
     
     echo -n "Testing UCI revert...  "
 
@@ -169,14 +170,14 @@ test_uci_cmd_revert() {
 }
 
 test_sys_cmd_ping() {
-    local p="${wrtctlp} -s daemon -c ping"
+    local p="${wrtctlp} $@ -s daemon -c ping"
     echo -n "Testing Daemon ping..."
     run_test 0 "^[0-9]+$" $p || fail
     echo "Success"
 }
 
 test_sys_cmd_reboot() {
-    local p="${wrtctlp} -s daemon -c reboot"
+    local p="${wrtctlp} $@ -s daemon -c reboot"
     local op=${WRTCTL_SYS_SHUTDOWN_PATH}
     local lpath="${WRTCTL_SYS_INITD_DIR}/log"
 
@@ -207,7 +208,7 @@ test_sys_cmd_reboot() {
 }
 
 test_sys_cmd_initd() {
-    local p="${wrtctlp} -s sys -c "
+    local p="${wrtctlp} $@ -s sys -c "
     local lpath="${WRTCTL_SYS_INITD_DIR}/log"
     local it="${WRTCTL_SYS_INITD_DIR}/initd.test"
 
@@ -245,8 +246,13 @@ test_sys_cmd_initd() {
     echo "Success"
 }
 
+
 start_daemon() {
-    ${wrtctldp} -m sys-cmds,uci-cmds &> wrtctld.log &
+    local args=""
+
+    [ @STUNNEL@ -eq 1 ] && args="-k ${key_path}"
+
+    ${wrtctldp} ${args} -m sys-cmds,uci-cmds &> wrtctld.log &
     wrtctld_pid=$!
     sleep 0.1
 }
@@ -258,11 +264,20 @@ stop_daemon() {
 start_daemon
 create_conf_file
 
-test_uci_cmd_get
-test_uci_cmd_set_commit
-test_uci_cmd_revert
-test_sys_cmd_ping
-#test_sys_cmd_reboot
-test_sys_cmd_initd
+if [ @STUNNEL@ -eq 0 ]; then
+    test_uci_cmd_get
+    test_uci_cmd_set_commit
+    test_uci_cmd_revert
+    test_sys_cmd_ping
+    #test_sys_cmd_reboot
+    test_sys_cmd_initd
+else 
+    test_uci_cmd_get -k ${key_path}
+    test_uci_cmd_set_commit -k ${key_path}
+    test_uci_cmd_revert -k ${key_path}
+    test_sys_cmd_ping -k ${key_path}
+    #test_sys_cmd_reboot
+    test_sys_cmd_initd -k ${key_path}
+fi
 stop_daemon
 exit 0
