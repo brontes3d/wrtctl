@@ -81,14 +81,14 @@ fail() {
 test_uci_cmd_get() {
     local p="${wrtctlp} $@ -s uci -c "
 
-    echo -n "Testing UCI get commands...  "
+    printf "%-50s" "Testing UCI get commands..."
     run_test 0 "test\.cfg[0-9]+\.first_opt=1" $p 'get test..first_opt'  || fail
     run_test 0 "test\.@anon_section\[0\].first_opt=1" $p 'get test.@anon_section[0].first_opt'  || fail
     run_test 0 "test\.@anon_section\[1\].first_opt=3" $p 'get test.@anon_section[1].first_opt'  || fail
     run_test 0 "test\.section_name.optA=A" $p 'get test.section_name.optA'  || fail
     run_test 1 "Server UCI Error:  3, test.blah.blah not found" $p 'get test.blah.blah'  || fail
     run_test 1 "Server UCI Error:  3, uci_lookup_ptr: Entry not found" $p 'get blah.blah.blah'  || fail
-    echo "Success."
+    echo "Success"
     return 0
 }
 
@@ -97,7 +97,7 @@ test_uci_cmd_set_commit() {
     local path="${WRTCTL_UCI_CONFDIR}/test"
     local spath="${WRTCTL_UCI_SAVEDIR}/test"
     
-    echo -n "Testing UCI set and commit commands...  "
+    printf "%-50s" "Testing UCI set and commit commands..."
 
     run_test 0 "" $p 'set test..first_opt=was_set' || fail
     grep_file "first_opt=was_set" ${spath} || fail
@@ -136,7 +136,7 @@ test_uci_cmd_set_commit() {
 test_uci_cmd_revert() {
     local p="${wrtctlp} $@ -s uci -c"
     
-    echo -n "Testing UCI revert...  "
+    printf "%-50s" "Testing UCI revert..."
 
     
     run_test 0 "" $p 'set test..first_opt=was_set' || fail
@@ -171,7 +171,7 @@ test_uci_cmd_revert() {
 
 test_sys_cmd_ping() {
     local p="${wrtctlp} $@ -s daemon -c ping"
-    echo -n "Testing Daemon ping..."
+    printf "%-50s" "Testing DAEMON ping..."
     run_test 0 "^[0-9]+$" $p || fail
     echo "Success"
 }
@@ -184,7 +184,7 @@ test_sys_cmd_reboot() {
     chmod +x ${op}
     rm -f ${WRTCTL_SYS_INITD_DIR}/log
    
-    echo -n "Testing Daemon reboot..."
+    printf "%-50s" "Testing Daemon reboot..."
     run_test 0 "Rebooting\.\.\." $p || fail
     sleep 6 # Wait for child to write the file
     grep_file "shutdown: -r now" ${lpath} || fail
@@ -212,7 +212,7 @@ test_sys_cmd_initd() {
     local lpath="${WRTCTL_SYS_INITD_DIR}/log"
     local it="${WRTCTL_SYS_INITD_DIR}/initd.test"
 
-    echo "Testing SYS initd..."
+    printf "%-50s" "Testing SYS initd..."
     chmod +x ${it}
     rm -f ${lpath} > /dev/null
     run_test 0 "initd.test start success" $p 'initd initd.test start' || fail
