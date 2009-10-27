@@ -21,3 +21,6 @@ stamp-h1
 src/bin/wrtctl
 src/bin/wrtctld
 test/stunnel.pem
+test/*/
+test/*.log
+test/test.sh
