@@ -74,7 +74,7 @@ run_test() {
 
 fail() {
     echo "Failed"
-    kill ${wrtctld_pid}
+    kill ${wrtctld_pid} &>/dev/null
     exit 1
 }
 
@@ -249,16 +249,19 @@ test_sys_cmd_initd() {
 
 start_daemon() {
     local args=""
-
     [ @STUNNEL@ -eq 1 ] && args="-k ${key_path}"
 
     ${wrtctldp} ${args} -m sys-cmds,uci-cmds &> wrtctld.log &
     wrtctld_pid=$!
     sleep 0.1
+    if ! kill -0 ${wrtctld_pid} &>/dev/null; then
+        echo "ERROR:  Failed to start ${wrtctldp} ${args} -m sys-cmds,uci-cmds"
+        fail
+    fi
 }
 
 stop_daemon() {
-    kill ${wrtctld_pid} || fail
+    kill ${wrtctld_pid} &>/dev/null || fail
 }
 
 start_daemon
@@ -272,6 +275,21 @@ if [ @STUNNEL@ -eq 0 ]; then
     #test_sys_cmd_reboot
     test_sys_cmd_initd
 else 
+    echo
+    echo "Testing without stunnel wrapper"
+    echo
+    test_uci_cmd_get -n
+    test_uci_cmd_set_commit -n
+    test_uci_cmd_revert -n
+    test_sys_cmd_ping -n
+    #test_sys_cmd_reboot -n
+    test_sys_cmd_initd -n
+    stop_daemon
+    echo
+    echo "Testing with stunnel wrapper"
+    echo
+    start_daemon
+    create_conf_file
     test_uci_cmd_get -k ${key_path}
     test_uci_cmd_set_commit -k ${key_path}
     test_uci_cmd_revert -k ${key_path}

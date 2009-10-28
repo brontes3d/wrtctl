@@ -276,6 +276,7 @@ void usage() {
     printf("\t-c,--command '<command>'      Command to be sent.\n");
 #ifdef ENABLE_STUNNEL
     printf("\nSSL Optional Arguments:\n");
+    printf("\t-n,--no_ssl                   Do not use ssl for encryption/verification\n");
     printf("\t-C,--ssl_client <port>        Port for local stunnel wrapper [%s].\n", WRTCTL_SSL_PORT);
     printf("\t-S,--ssl_server <port>        Port for remote stunnel wrapper [%s].\n", WRTCTLD_SSL_PORT);
     printf("\t-k,--key_path <path>          Path to shared SSL certificate [%s].\n", DEFAULT_KEY_PATH);
@@ -288,12 +289,15 @@ bool verbose = false;
 int main(int argc, char **argv){
     nc_t nc = NULL;;
     int rc = 0;
-
+    bool use_ssl = false;
     char *command = NULL, *subsystem = NULL, *target = NULL, *port = NULL;
+
 
 #ifdef ENABLE_STUNNEL
     char *key_path = NULL, *client_ssl_port = NULL, *server_ssl_port = NULL;
     stunnel_ctx_t stunnel_ctx = NULL;
+
+    use_ssl = true;
 #endif
 
     while ( true ){
@@ -310,12 +314,13 @@ int main(int argc, char **argv){
             { "ssl_client", required_argument,  NULL,   'C'},
             { "ssl_server", required_argument,  NULL,   'S'},
             { "key_path",   required_argument,  NULL,   'k'},
+            { "no_ssl",     no_argument,        NULL,   'n'},
 #endif
             { 0,            0,                  0,      0}
         };
 
 #ifdef ENABLE_STUNNEL
-        c = getopt_long(argc, argv, "p:t:s:c:vhC:S:k:", lo, &oi);
+        c = getopt_long(argc, argv, "p:t:s:c:vhC:S:k:n", lo, &oi);
 #else
         c = getopt_long(argc, argv, "p:t:s:c:vh", lo, &oi);
 #endif
@@ -360,6 +365,9 @@ int main(int argc, char **argv){
             case 'k':
                 key_path = optarg;
                 break;
+            case 'n':
+                use_ssl = false;
+                break;
 #endif
             default:
                 fprintf(stderr, "Unknown command -%c%s.\n",
@@ -384,43 +392,53 @@ int main(int argc, char **argv){
     if ( !port )
         port = WRTCTLD_DEFAULT_PORT;
 
+    if ( ! subsystem || ! command ){
+        fprintf(stderr, "Invalid command line, no subsystem and/or command specified.\n");
+        rc = EINVAL;
+        goto done;
+    }
+
     if ( (rc = alloc_client(&nc, false, verbose)) != NET_OK ){
         fprintf(stderr, "alloc_client failed: %s.\n", net_strerror(rc));
         goto done;
     }
 
 #ifdef ENABLE_STUNNEL
-    if ( !key_path )
-        key_path = DEFAULT_KEY_PATH;
+    if ( use_ssl ){
+        if ( !key_path )
+            key_path = DEFAULT_KEY_PATH;
 
-    if ( (rc = start_stunnel_client(
-            &stunnel_ctx,
-            target,
-            key_path,
-            port,
-            client_ssl_port,
-            server_ssl_port)) != 0 ){
-        fprintf(stderr, "Failed to start the stunnel wrapper.\n");
-        goto done;
+        if ( (rc = start_stunnel_client(
+                &stunnel_ctx,
+                target,
+                key_path,
+                port,
+                client_ssl_port,
+                server_ssl_port)) != 0 ){
+            fprintf(stderr, "Failed to start the stunnel wrapper.\n");
+            goto done;
+        }
+    
+        if ( (rc = create_conn(
+                nc,
+                "localhost",
+                client_ssl_port ? client_ssl_port : WRTCTL_SSL_PORT)) != NET_OK ){
+            fprintf(stderr, "create_conn failed: %s.\n", net_strerror(rc));
+            goto done;
+        }
+    } else 
+#endif
+    {  
+        if ( (rc = create_conn(
+                nc,
+                target,
+                port)) != NET_OK ){
+            fprintf(stderr, "create_conn failed: %s.\n", net_strerror(rc));
+            goto done;
+        }
     }
     
-    port = client_ssl_port ? client_ssl_port : WRTCTL_SSL_PORT;
-    free(target);
-    asprintf(&target, "localhost");
-#endif
-
-    if ( (rc = create_conn(nc, target, port)) != NET_OK ){
-        fprintf(stderr, "create_conn failed: %s.\n", net_strerror(rc));
-        goto done;
-    }
-   
     free(target); target = NULL;
-
-    if ( ! subsystem || ! command ){
-        fprintf(stderr, "Invalid command line, no subsystem and/or command specified.\n");
-        rc = EINVAL;
-        goto done;
-    }
 
     if ( verbose )
         printf("Processing subsystem='%s' command='%s'.\n", subsystem, command);
