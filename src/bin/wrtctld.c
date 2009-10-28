@@ -41,7 +41,6 @@ int main(int argc, char **argv){
     int rc = 0;
     char *modules = NULL;
     char *port = NULL;
-    char *module_path = NULL;
     ns_t ns = NULL;
 
 #ifdef ENABLE_STUNNEL
