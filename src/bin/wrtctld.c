@@ -6,10 +6,6 @@
 #include <errno.h>
 #include "wrtctl-net.h"
 
-#ifdef ENABLE_STUNNEL
-#include "stunnel.h"
-#endif
-
 bool verbose = false;
 bool daemonize = true;
 

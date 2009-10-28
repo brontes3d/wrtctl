@@ -7,10 +7,6 @@
 #include <uci.h>
 #include "wrtctl-net.h"
 
-#ifdef ENABLE_STUNNEL
-#include "stunnel.h"
-#endif
-
 #ifdef NDEBUG
 #define TIMEOUT 10
 #else

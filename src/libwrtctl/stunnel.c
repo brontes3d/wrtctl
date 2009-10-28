@@ -11,7 +11,6 @@
 #include <signal.h>
 
 #include <wrtctl-net.h>
-#include <stunnel.h>
 
 #define STUNNEL_CONF_TEMPLATE \
     "cert       = %s\n" \
@@ -22,7 +21,7 @@
     "socket     = r:TCP_NODELAY=1\n" \
     "verify     = 2\n" \
     "client     = %s\n" \
-    "foreground = yes\n\n" \
+    "foreground = yes\n" \
     "syslog     = yes\n\n" \
     "[wrtctl%s]\n" \
     "accept     = %s\n" \
