@@ -272,7 +272,7 @@ int kill_stunnel( stunnel_ctx_t *ctx ){
 
     if ( kill( (*ctx)->pid, SIGTERM ) == -1 ){
         rc = errno;
-        fprintf(stderr, "Failed to kill %u: %s\n", strerror(errno));
+        fprintf(stderr, "Failed to kill %u: %s\n", (*ctx)->pid, strerror(errno));
         return rc;
     }
   
