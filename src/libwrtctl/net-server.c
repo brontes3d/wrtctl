@@ -281,6 +281,7 @@ int default_handler( ns_t ns, dd_t dd ){
                     free(nc.subsystem);
                 if ( nc.value )
                     free(nc.value);
+                break;
             }
             if ( !handled ){
                 err("Unhandled net command for subsystem %s\n", nc.subsystem);
