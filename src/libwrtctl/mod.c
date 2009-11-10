@@ -18,6 +18,7 @@ char * load_module(mlh_t ml, md_t *mdp, char *module_path){
         goto err;
     }
     memset(md, 0, sizeof(struct mod_data));
+    md->dlp=NULL;
     
     dlerror();
     if ( !(md->dlp = dlopen(module_path, RTLD_LAZY|RTLD_LOCAL)) ){

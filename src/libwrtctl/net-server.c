@@ -264,7 +264,6 @@ int default_handler( ns_t ns, dd_t dd ){
                     continue;
 
                 handled = true;
-
                 hrc = md->mod_handler(
                     md->mod_ctx,
                     &nc,

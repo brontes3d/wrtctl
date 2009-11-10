@@ -13,22 +13,135 @@
 #define TIMEOUT 1000
 #endif
 
-int sys_cmds(nc_t nc, char *cmdline) {
-    packet_t sp = NULL, rp = NULL;
-    struct timeval to = { TIMEOUT, 0 };
-    struct net_cmd ncmd;
-    char *daemon = NULL, *command = NULL, *send = NULL;
+#define MAX_LINE 1024
 
-    uint16_t id = (uint16_t)SYS_CMD_NONE;
-    char *subsystem = SYS_CMDS_MAGIC;
+int parse_uci_cmd       (char *cmdline, packet_t *sp);
+int parse_sys_cmd       (char *cmdline, packet_t *sp);
+int parse_daemon_cmd    (char *cmdline, packet_t *sp);
 
+bool verbose = false;
 
-    int rc = NET_OK;
+int line_to_packet(char * line, packet_t *sp) {
+    int         rc;
+    char *      subsystem = NULL;
+    char *      cmd = NULL;
 
-    if ( !cmdline  ){
-        fprintf(stderr, "Invalid command line.\n");
+    if ( !(subsystem = strtok(line, ":")) 
+            || !(cmd = strtok(NULL, ":")))
+        return EINVAL;
+    printf("%s\n",cmd);
+    if ( !strncmp(subsystem, "uci", 4) ){
+        rc = parse_uci_cmd(cmd, sp);
+    } else if ( !strncmp(subsystem, "daemon", 7) ){
+        rc = parse_daemon_cmd(cmd, sp);
+    } else if ( !strncmp(subsystem, "sys", 4) ){
+        rc = parse_sys_cmd(cmd, sp);
+    } else {
+        fprintf(stderr, "Unknown subsystem '%s'\n", subsystem);
         return EINVAL;
     }
+    line[strlen(line)] = ':';
+
+    return rc;
+}
+
+int client_loop(nc_t nc, FILE *cmds_fp) {
+    char *          line = NULL;
+    ssize_t         line_len = 0;
+    int             rc = 0;
+    packet_t        sp, rp;
+    struct timeval  to = { TIMEOUT, 0 };
+    struct net_cmd  ncmd;
+    int             line_cnt = 0;
+    size_t          n;
+
+        
+    memset( &ncmd, 0, sizeof(struct net_cmd) );
+
+    while ( (line_len = getline(&line, &n, cmds_fp)) > 0 ){
+        line_cnt += 1;
+        if ( line_len == MAX_LINE ){
+            fprintf(stderr, "Line %d too long.\n", line_cnt);
+            rc = EINVAL;
+            break;
+        }
+
+        if ( line[line_len-1] == '\n' )
+            line[line_len-1] = '\0';
+
+        if ( (rc = line_to_packet(line, &sp) ) != NET_OK ){
+            fprintf(stderr, "Failed to parse line %d\n", line_cnt);
+            rc = EINVAL;
+            break;
+        }
+        
+        nc_add_packet(nc, sp);
+    
+        if ( (rc = wait_on_response(nc, &to, true)) != NET_OK ){
+            fprintf(stderr, "Timeout while sending command: %s\n", line);
+            fprintf(stderr, "%s\n", net_strerror(rc));
+            rc = ETIMEDOUT;
+            break;
+        }
+
+        if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
+            fprintf(stderr, "No response from %s\n", nc->dd->host);
+            rc = ETIMEDOUT;
+            break;
+        }
+
+        if ( (rc = unpack_net_cmd_packet(&ncmd, rp )) != NET_OK ){
+            fprintf(stderr, "unpack_str_cmd_packet: %s\n", net_strerror(rc));
+            return ENOMEM;
+        }
+
+        STAILQ_REMOVE( &(nc->dd->recvq), rp, packet, packet_queue );
+        free_packet(rp);
+
+        if ( ncmd.id != (uint16_t)0 ){
+            fprintf(stderr, "Server Error:  %u, %s\n",
+                ncmd.id, ncmd.value ? ncmd.value : "(null errmsg)");
+            rc = ncmd.id;
+            break;
+        } else if ( ncmd.value ){
+            if ( verbose )
+                printf("%-40s --> ", line);
+            printf("%s\n", ncmd.value );
+        }
+
+        if (ncmd.value)
+            free(ncmd.value);
+        if (ncmd.subsystem)
+            free(ncmd.subsystem);
+        memset( &ncmd, 0, sizeof(struct net_cmd) );
+
+        free(line);
+        line = NULL;
+    }
+
+    if (line)
+        free(line);
+    if (ncmd.value)
+        free(ncmd.value);
+    if (ncmd.subsystem)
+        free(ncmd.subsystem);
+
+    if ( feof(cmds_fp) == 0 ){
+        fprintf(stderr, "Did not finish processing all commands.\n");
+        if ( rc == 0 )
+            rc = 1;
+    }
+
+    return rc;
+}
+
+    
+
+int parse_sys_cmd(char *cmdline, packet_t *sp) {
+    int rc              = NET_OK;
+    uint16_t id         = (uint16_t)SYS_CMD_NONE;
+    char *subsystem     = SYS_CMDS_MAGIC;
+    char *daemon = NULL, *command = NULL, *send = NULL;
 
     if ( !strncmp(cmdline, "initd ", strlen("initd ")) ){
         id = SYS_CMD_INITD;
@@ -54,59 +167,20 @@ int sys_cmds(nc_t nc, char *cmdline) {
         return EINVAL;
     }
 
-    if ( (rc = create_net_cmd_packet(&sp, id, subsystem, send)) != NET_OK){
+    if ( (rc = create_net_cmd_packet(sp, id, subsystem, send)) != NET_OK){
         fprintf(stderr, "%s\n", net_strerror(rc));
         return ENOMEM;
     }
-    nc_add_packet(nc, sp);
-
-    if ( (rc = wait_on_response(nc, &to, true)) != NET_OK ){
-        fprintf(stderr, "%s\n", net_strerror(rc));
-        return ETIMEDOUT;
-    }
-
-    if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
-        fprintf(stderr, "No response from %s\n", nc->dd->host);
-        return ETIMEDOUT;
-    }
-
-    if ( (rc = unpack_net_cmd_packet(&ncmd, rp )) != NET_OK ){
-        fprintf(stderr, "unpack_str_cmd_packet: %s\n", net_strerror(rc));
-        return ENOMEM;
-    }
-
-    rc = 0;
-    if ( ncmd.id != (uint16_t)0 ){
-        fprintf(stderr, "Server SysCmds Error:  %u, %s\n",
-            ncmd.id, ncmd.value ? ncmd.value : "(null errmsg)");
-        rc = EINVAL;
-    } else if ( ncmd.value ){
-        printf("%s\n", ncmd.value );
-    }
-
-    if ( ncmd.value )
-        free(ncmd.value);
-    if ( ncmd.subsystem )
-        free(ncmd.subsystem);
+    
     return rc;
 }
 
 
-int daemon_cmds(nc_t nc, char *cmdline){
-    packet_t sp = NULL, rp = NULL;
-    struct timeval to = { TIMEOUT, 0 };
-    struct net_cmd ncmd;
-
-    uint16_t id = (uint16_t)DAEMON_CMD_NONE;
-    char *subsystem = DAEMON_CMD_MAGIC;
-
-    int rc = NET_OK;
-
-    if ( !cmdline ){
-        fprintf(stderr, "No command specified.\n");
-        return EINVAL;
-    }
-
+int parse_daemon_cmd(char *cmdline, packet_t *sp){
+    int rc              = NET_OK;
+    uint16_t id         = (uint16_t)DAEMON_CMD_NONE;
+    char *subsystem     = DAEMON_CMD_MAGIC;
+    
     if ( !strncmp(cmdline, "ping", 5) )
         id = DAEMON_CMD_PING;
     else if ( !strncmp(cmdline, "reboot", 9) )
@@ -116,66 +190,27 @@ int daemon_cmds(nc_t nc, char *cmdline){
         return EINVAL;
     }
 
-    if ( (rc = create_net_cmd_packet(&sp, id, subsystem, NULL)) != NET_OK){
+    if ( (rc = create_net_cmd_packet(sp, id, subsystem, NULL)) != NET_OK){
         fprintf(stderr, "%s\n", net_strerror(rc));
         return ENOMEM;
     }
-    nc_add_packet(nc, sp);
-
-    if ( (rc = wait_on_response(nc, &to, true)) != NET_OK ){
-        fprintf(stderr, "%s\n", net_strerror(rc));
-        return ETIMEDOUT;
-    }
-
-    if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
-        fprintf(stderr, "No response from %s\n", nc->dd->host);
-        return ETIMEDOUT;
-    }
-
-    if ( (rc = unpack_net_cmd_packet(&ncmd, rp )) != NET_OK ){
-        fprintf(stderr, "unpack_str_cmd_packet: %s\n", net_strerror(rc));
-        return ENOMEM;
-    }
-
-    rc = 0;
-    if ( ncmd.id != (uint16_t)0 ){
-        fprintf(stderr, "Server Daemon Error:  %u, %s\n",
-            ncmd.id, ncmd.value ? ncmd.value : "(null errmsg)");
-        rc = EINVAL;
-    } else if ( ncmd.value ){
-        printf("%s\n", ncmd.value );
-    }
-
-    if ( ncmd.value )
-        free(ncmd.value);
-    if ( ncmd.subsystem )
-        free(ncmd.subsystem);
     return rc;
 }
 
  
+int parse_uci_cmd(char *cmdline, packet_t *sp){
+    int rc              = NET_OK;
+    uint16_t id         = (uint16_t)UCI_CMD_NONE;
+    char *subsystem     = UCI_CMDS_MAGIC;
+    char *nc_value      = NULL;
 
-
-
-int uci_cmds(nc_t nc, char *cmdline){
-    packet_t sp = NULL, rp = NULL;
     char *cmd = NULL, *option = NULL, *value = NULL;
-    struct timeval to = {TIMEOUT, 0};
     size_t cl;
-    struct net_cmd ncmd;
 
-    uint16_t id = (uint16_t)UCI_CMD_NONE;
-    char *subsystem = UCI_CMDS_MAGIC;
-    char *nc_value = NULL;
-
-    int rc = NET_OK;
-
-
-    cmd = option = value = NULL;
     cl = cmdline ? strlen(cmdline) : 0;
 
-    if ( !cmdline || !(cmd = strtok(cmdline, " ")) ){
-        fprintf(stderr, "No command specified.\n");
+    if ( !(cmd = strtok(cmdline, " ")) ){
+        fprintf(stderr, "No UCI command specified.\n");
         return EINVAL;
     }
 
@@ -224,45 +259,14 @@ int uci_cmds(nc_t nc, char *cmdline){
         return EINVAL;
     }
 
-    if ( (rc = create_net_cmd_packet(&sp, id, subsystem, nc_value)) != NET_OK){
+    if ( (rc = create_net_cmd_packet(sp, id, subsystem, nc_value)) != NET_OK){
         fprintf(stderr, "%s\n", net_strerror(rc));
         return ENOMEM;
     }
-    nc_add_packet(nc, sp);
-
-    if ( (rc = wait_on_response(nc, &to, true)) != NET_OK ){
-        fprintf(stderr, "%s\n", net_strerror(rc));
-        return ETIMEDOUT;
-    }
-
-    if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
-        fprintf(stderr, "No response from %s\n", nc->dd->host);
-        return ETIMEDOUT;
-    }
-
-    if ( (rc = unpack_net_cmd_packet(&ncmd, rp )) != NET_OK ){
-        fprintf(stderr, "unpack_str_cmd_packet: %s\n", net_strerror(rc));
-        return ENOMEM;
-    }
-
-    rc = 0;
-    if ( ncmd.id != (uint16_t)UCI_OK ){
-        fprintf(stderr, "Server UCI Error:  %u, %s\n",
-            ncmd.id, ncmd.value ? ncmd.value : "(null errmsg)");
-        rc = EINVAL;
-    } else if ( ncmd.value ){
-        printf("%s\n", ncmd.value );
-    }
-
-    if ( ncmd.value )
-        free(ncmd.value);
-    if ( ncmd.subsystem )
-        free(ncmd.subsystem);
     return rc;
 }
 
 void usage() {
-    char *valid_subsystems = "uci, daemon, sys";
 
     printf("%s\n", PACKAGE_STRING);
     printf("wrtctl [ARGS]\n");
@@ -272,8 +276,7 @@ void usage() {
     printf("\t-p,--port <port>              Port to connect to [%s].\n", WRTCTLD_DEFAULT_PORT);
     printf("\nRequired Arguments:\n");
     printf("\t-t,--target <target>          Address to connect to.\n");
-    printf("\t-s,--subsystem <subsystem>    Command type.  (%s)\n", valid_subsystems);
-    printf("\t-c,--command '<command>'      Command to be sent.\n");
+    printf("\t-f,--file <file>              File containing commands to process (- for stdin)\n");
 #ifdef ENABLE_STUNNEL
     printf("\nSSL Optional Arguments:\n");
     printf("\t-n,--no_ssl                   Do not use ssl for encryption/verification\n");
@@ -284,13 +287,12 @@ void usage() {
     return;
 }
     
-bool verbose = false;
-
 int main(int argc, char **argv){
-    nc_t nc = NULL;;
-    int rc = 0;
-    bool use_ssl = false;
-    char *command = NULL, *subsystem = NULL, *target = NULL, *port = NULL;
+    nc_t    nc = NULL;
+    int     rc = 0;
+    bool    use_ssl = false;
+    char    *target = NULL, *port = NULL;
+    FILE    *cmdfd = NULL;
 
 
 #ifdef ENABLE_STUNNEL
@@ -306,8 +308,7 @@ int main(int argc, char **argv){
         static struct option lo[] = {
             { "port",       required_argument,  NULL,   'p'},
             { "target",     required_argument,  NULL,   't'},
-            { "subsystem",  required_argument,  NULL,   's'},
-            { "command",    required_argument,  NULL,   'c'},
+            { "file",       required_argument,  NULL,   'f'},
             { "verbose",    no_argument,        NULL,   'v'},
             { "help",       no_argument,        NULL,   'h'},
 #ifdef ENABLE_STUNNEL
@@ -320,23 +321,21 @@ int main(int argc, char **argv){
         };
 
 #ifdef ENABLE_STUNNEL
-        c = getopt_long(argc, argv, "p:t:s:c:vhC:S:k:n", lo, &oi);
+        c = getopt_long(argc, argv, "p:t:f:vhC:S:k:n", lo, &oi);
 #else
-        c = getopt_long(argc, argv, "p:t:s:c:vh", lo, &oi);
+        c = getopt_long(argc, argv, "p:t:f:vh", lo, &oi);
 #endif
         if ( c == -1 ) break;
 
         switch (c) {
-            case 's':
-                if ( !(subsystem = strdup(optarg)) ){
-                    perror("strdup: ");
-                    rc = errno;
-                }
-                break;
-            case 'c':
-                if ( !(command = strdup(optarg)) ){
-                    perror("strdup: ");
-                    rc = errno;
+            case 'f':
+                if ( optarg[0] == '-')
+                    cmdfd = stdin;
+                else {
+                    if ( !(cmdfd = fopen(optarg, "r") ) ){
+                        rc = errno;
+                        perror("fopen: ");
+                    }
                 }
                 break;
             case 'v':
@@ -392,8 +391,8 @@ int main(int argc, char **argv){
     if ( !port )
         port = WRTCTLD_DEFAULT_PORT;
 
-    if ( ! subsystem || ! command ){
-        fprintf(stderr, "Invalid command line, no subsystem and/or command specified.\n");
+    if ( !cmdfd ){
+        fprintf(stderr, "No command file specified.\n");
         rc = EINVAL;
         goto done;
     }
@@ -440,24 +439,10 @@ int main(int argc, char **argv){
     
     free(target); target = NULL;
 
-    if ( verbose )
-        printf("Processing subsystem='%s' command='%s'.\n", subsystem, command);
-
-    if ( !strncmp(subsystem, "uci", 4) ){
-        rc = uci_cmds(nc, command);
-    } else if ( !strncmp(subsystem, "daemon", 7) ){
-        rc = daemon_cmds(nc, command);
-    } else if ( !strncmp(subsystem, "sys", 4) ){
-        rc = sys_cmds(nc, command);
-    } else {
-        fprintf(stderr, "Unknown subsystem '%s'\n", subsystem);
-        rc = EINVAL;
-        goto done;
-    }
-
+    rc = client_loop(nc, cmdfd);
 done:
-    if ( command )      free(command);
-    if ( subsystem )    free(subsystem);
+    if (cmdfd && cmdfd != stdin)
+        fclose(cmdfd);
     if ( target )       free(target);
     if (nc) {
         close_conn(nc);

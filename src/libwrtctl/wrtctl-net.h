@@ -180,6 +180,13 @@ void close_conn(nc_t nc);
 #define nc_add_packet(nc, p) \
     STAILQ_INSERT_TAIL( &(nc->dd->sendq), p, packet_queue )
 
+#define free_packet( x ) \
+    if ((x)){ \
+        if ((x)->data) free((x)->data); \
+        free((x)); \
+    } \
+    (x) = NULL;
+
 /* Wait timeout length for the server to respond.  A single complete
  * packet is considered a response.
  *  Returns a net_error

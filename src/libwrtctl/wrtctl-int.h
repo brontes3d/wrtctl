@@ -12,14 +12,6 @@ int     create_dd( dd_t *dd, int fd );
  */
 void    free_dd( dd_t *dd );
 
-
-#define free_packet( x ) \
-    if ((x)){ \
-        if ((x)->data) free((x)->data); \
-        free((x)); \
-    } \
-    (x) = NULL;
-
 /* Sends every packet in a d_data's sendq.  If any packet fails to send,
  * the operation is halted and the error returned.
  */

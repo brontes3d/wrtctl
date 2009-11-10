@@ -235,10 +235,12 @@ done:
 }
 
 int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str){
-    int uci_rc = UCI_OK;
-    struct uci_ptr ucip;
-    bool restore_pso = false;
-    char *val_str = NULL;
+    int             uci_rc = UCI_OK;
+    struct uci_ptr  ucip;
+    bool            restore_pso = false;
+    char *          val_str =  NULL;
+    char *          full_pso = NULL;
+
 
     if ( !value ){
         uci_rc = UCI_ERR_INVAL;
@@ -246,22 +248,32 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
         goto done;
     }
 
-    if ( (uci_rc = uci_fill_section(ucihc, &value)) != UCI_OK ){
+    /*
+     * As value is part of the incoming packet, we can't mess with it in uci_fill_section
+     * or uci_lookup_ptr.  So we're taking a copy of it here.
+     */
+    if ( !(full_pso = strdup(value)) ){
+        uci_rc = UCI_ERR_MEM;
+        asprintf(out_str, "uci_cmd_get:  Memory allocation failure.");
+        goto done;
+    }
+
+    if ( (uci_rc = uci_fill_section(ucihc, &full_pso)) != UCI_OK ){
         uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_cmd_get:uci_fill_section");
         goto done;
     }
     
-    if ( (uci_rc = uci_lookup_ptr(ucihc->uci_ctx, &ucip, value, true)) != UCI_OK ){
+    if ( (uci_rc = uci_lookup_ptr(ucihc->uci_ctx, &ucip, full_pso, true)) != UCI_OK ){
         uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_lookup_ptr");
         goto done;
     }
     /* The above replaces the two separators '.' with '\0'' */
 
     if ( !(ucip.flags & UCI_LOOKUP_COMPLETE) ){
-        value[strlen(value)] = '.';
-        value[strlen(value)] = '.';
+        full_pso[strlen(full_pso)] = '.';
+        full_pso[strlen(full_pso)] = '.';
         uci_rc = UCI_ERR_NOTFOUND;
-        asprintf(out_str, "%s not found", value);
+        asprintf(out_str, "%s not found", full_pso);
         goto done;
     }
     
@@ -303,15 +315,20 @@ done:
 
     /* Restore our pso from the damage done by uci_lookup_ptr */
     if ( restore_pso ){
-        value[strlen(value)] = '.';
-        value[strlen(value)] = '.';
+        full_pso[strlen(full_pso)] = '.';
+        full_pso[strlen(full_pso)] = '.';
     }
+
     if ( uci_rc == UCI_OK ){
-        if ( asprintf(out_str, "%s=%s", value, val_str ? val_str : "(null)") < 0 ){
+        if ( asprintf(out_str, "%s=%s", full_pso, val_str ? val_str : "(null)") < 0 ){
             (*out_str) = NULL;
             uci_rc = UCI_ERR_MEM;
         }
     }
+
+    if ( full_pso )
+        free(full_pso);
+
     (*out_rc) = (uint16_t)uci_rc;
     //UCIH_DEBUG("%s:  Returning %s\n", __func__, (*out_str));
     return 0;
@@ -629,8 +646,9 @@ int uci_fill_section(ucih_ctx_t ucihc, char **pso){
         //UCIH_DEBUG("%s: %s -> %s\n", __func__, *pso, final_pso);
         free(section);
         free(new_pso);
+
         free( (*pso) );
-        *pso = final_pso;
+        (*pso) = final_pso;
     }
     return UCI_OK;
 }
