@@ -125,19 +125,13 @@ struct net_server {
     STAILQ_HEAD(module_list, mod_data) mod_list;
 };
 
-#define free_ns(x) \
-    if ( (x) ){ \
-        if ( (x)->shutdown_path ) \
-            free( (x)->shutdown_path ); \
-        free( (x) ); \
-    } \
-    closelog();
-
 /* Creates a net_server structure on the given port.  Modules is a string, seperated by
  * commas, of the modules that need to be loaded.
  *  Returns a net_errno.
  */
 int create_ns( ns_t *ns, char *port, char *modules, bool enable_log, bool verbose );
+
+void free_ns( ns_t *ns );
 
 /* Default server loop.  Runs through connections, accepts and hands any packets off
  * to the server handler.

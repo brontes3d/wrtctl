@@ -425,11 +425,14 @@ int uci_cmd_revert(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_s
         }
 
     } else {
-        char **configs;
+        char **configs = NULL;
         int loop_rc;
         int i;
 
- 
+
+        /* TODO:  As of at least uci-0.7.4, this function leaks when a glob of the confdir
+         * returns nonzero (empty directory).
+         */
         if ( (uci_rc = uci_list_configs(ucihc->uci_ctx, &configs)) != UCI_OK ){
             if ( out_str )
                 uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_list_configs");

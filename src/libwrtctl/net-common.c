@@ -115,10 +115,9 @@ int flush_sendq(dd_t dd){
 
     STAILQ_FOREACH_SAFE(cp, &(dd->sendq), packet_queue, tmp){
         STAILQ_REMOVE(&(dd->sendq), cp, packet, packet_queue);
-        rc = send_packet(dd, cp);
+        if ( rc == NET_OK )
+            rc = send_packet(dd, cp);
         free_packet(cp);
-        if (rc != NET_OK)
-            break;
     }
     return rc;
 }
@@ -283,6 +282,10 @@ done:
         tpl_free(tn);
     if ( data )
         free(data);
+    if ( cmd.subsystem )
+        free(cmd.subsystem);
+    if ( cmd.value )
+        free(cmd.value);
     return rc;
 }
 

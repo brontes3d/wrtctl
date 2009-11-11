@@ -153,7 +153,7 @@ int main(int argc, char **argv){
 
 shutdown:
     if ( ns )
-        free_ns(ns);
+        free_ns(&ns);
     if ( daemonize )
         closelog();
     exit(rc == NET_OK ? EXIT_SUCCESS : EXIT_FAILURE);

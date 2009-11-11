@@ -111,14 +111,36 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
     goto done;
 
 err:
-    if ( res ) freeaddrinfo(res);
-    if ( (*ns)->listen_fd != -1 ) close((*ns)->listen_fd);
-    unload_modules(&((*ns)->mod_list));
-    if ( (*ns) ) free_ns((*ns));
+    free_ns(ns);
     *ns = NULL;
 
 done:
+    if ( res ) freeaddrinfo(res);
     return rc;
+}
+
+
+void free_ns(ns_t *ns){
+    if ( (*ns) ){
+        dd_t dd, dd_tmp;
+        md_t md, md_tmp;
+
+        if ( (*ns)->listen_fd != -1 )
+            close((*ns)->listen_fd);
+
+        STAILQ_FOREACH_SAFE(dd, &((*ns)->dd_list), dd_queue, dd_tmp){
+            STAILQ_REMOVE(&((*ns)->dd_list), dd, d_data,  dd_queue);
+            free_dd(&dd);
+        }
+
+        unload_modules(&((*ns)->mod_list));
+        if ( (*ns)->shutdown_path )
+            free( (*ns)->shutdown_path );
+        free( (*ns) );
+        *ns = NULL;
+    }
+    closelog();
+    return;
 }
 
 int accept_connection(ns_t ns){
@@ -232,6 +254,7 @@ int default_server_loop(ns_t ns){
 
     STAILQ_FOREACH_SAFE(dd_iter, &(ns->dd_list), dd_queue, dd_tmp){
         ns->shutdown_dd(ns, dd_iter);
+        free_dd(&dd_iter);
     }
 
     shutdown(ns->listen_fd, SHUT_RDWR);
