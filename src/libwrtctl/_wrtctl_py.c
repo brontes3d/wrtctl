@@ -203,32 +203,33 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
 }
 
 
-int setDictItem( PyObject* dict, char *key, char *val ){
-    PyObject *oKey  = NULL;
+static int setDictItem( PyObject* dict, char *key, char *val, int ival ){
     PyObject *oVal  = NULL;
 
-    if ( !(oKey = PyString_FromString(key)) ){
+    if (val){
+        if ( !(oVal = PyString_FromString(val)) ){
+            PyErr_Format(
+                PyExc_EnvironmentError,
+                "Could not create item string '%s'",
+                val );
+            return -1;
+        }
+    } else {
+        if ( !(oVal = PyInt_FromLong(ival)) ){
+            PyErr_Format(
+                PyExc_EnvironmentError,
+                "Could not create item int '%d'",
+                ival );
+            return -2;
+        }
+    }
+
+    if ( PyDict_SetItemString(dict, key, oVal) ){
         PyErr_Format(
             PyExc_EnvironmentError,
-            "get_param_defaults() could not create key string '%s'",
+            "Could not set dictionary item '%s'",
             key );
-        return 1;
-    }
-
-    if ( !(oVal = PyString_FromString(val)) ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "get_param_defaults() could not create item string '%s'",
-            val );
-        return 2;
-    }
-
-    if ( PyDict_SetItem(dict, oKey, oVal) ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "get_param_defaults() could not set dictionary item '%s':'%s'",
-            key, val );
-        return 3;
+        return -3;
     }
     return 0;
 }
@@ -236,12 +237,12 @@ int setDictItem( PyObject* dict, char *key, char *val ){
 
 static PyObject* Py_get_param_defaults(PyObject *obj, PyObject *args) {
     PyObject* dict = PyDict_New();
-    if (setDictItem(dict,           "DEFAULT_KEY_PATH",     DEFAULT_KEY_PATH    )
-            || setDictItem(dict,    "WRTCTLD_DEFAULT_PORT", WRTCTLD_DEFAULT_PORT)
-            || setDictItem(dict,    "WRTCTL_SSL_PORT",      WRTCTL_SSL_PORT     )
-            || setDictItem(dict,    "WRTCTLD_SSL_PORT",     WRTCTLD_SSL_PORT    )
-            || setDictItem(dict,    "NET_ERR_TIMEOUT",      NET_ERR_TIMEOUT     )
-            || setDictItem(dict,    "NET_OK",               NET_OK              ) ){
+    if (setDictItem(dict,           "DEFAULT_KEY_PATH",     DEFAULT_KEY_PATH    , 0)
+            || setDictItem(dict,    "WRTCTLD_DEFAULT_PORT", WRTCTLD_DEFAULT_PORT, 0)
+            || setDictItem(dict,    "WRTCTL_SSL_PORT",      WRTCTL_SSL_PORT     , 0)
+            || setDictItem(dict,    "WRTCTLD_SSL_PORT",     WRTCTLD_SSL_PORT    , 0)
+            || setDictItem(dict,    "NET_ERR_TIMEOUT",      NULL                , NET_ERR_TIMEOUT)
+            || setDictItem(dict,    "NET_OK",               NULL                , NET_OK         ) ){
         return NULL;
     }
     return dict;    
