@@ -52,6 +52,7 @@ static PyObject* Py_alloc_client( PyObject *obj, PyObject *args ){
 
 
 #ifdef ENABLE_STUNNEL
+
 static void deletectx( void *vptr ){
     if (vptr)
         kill_stunnel( (stunnel_ctx_t *)&vptr );
@@ -91,6 +92,10 @@ static PyObject* Py_start_stunnel_client(PyObject *obj, PyObject *args) {
         return NULL;
     }
     return PyCObject_FromVoidPtr((void*)ctx, deletectx);
+}
+#else
+static PyObject* Py_start_stunnel_client(PyObject *obj, PyObject *args) {
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -289,14 +294,12 @@ static PyMethodDef _wrtctl_funcs[] = {
             "{ <default values> } = _wrtctl.get_param_defaults()"
         },
 
-#ifdef ENABLE_STUNNEL
         { "start_stunnel_client",
             Py_start_stunnel_client, METH_VARARGS,
             "ctxobj = _wrtctl.start_stunnel_client(hostname, key_path='" \
             DEFAULT_KEY_PATH"', port='"WRTCTLD_DEFAULT_PORT"', wrtctlPort='" \
             WRTCTL_SSL_PORT"', wrtctldPort='"WRTCTLD_SSL_PORT"')" 
         },
-#endif
 
         { NULL, NULL }
 };
