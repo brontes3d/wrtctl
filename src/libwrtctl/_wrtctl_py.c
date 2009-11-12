@@ -174,7 +174,9 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
     packet_t rp     = NULL;
     struct net_cmd ncmd;
     int rc;
- 
+
+    memset(&ncmd, 0, sizeof(struct net_cmd));
+
     if ( !PyArg_ParseTuple(args, "O", &pync) )
         return NULL;
 
@@ -198,7 +200,8 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
     }
     
     rv = Py_BuildValue("(iss)", ncmd.id, ncmd.subsystem, ncmd.value);
-//    free_net_cmd(ncmd); *************************************************************************** todo: implement when available ******************************************
+    free_net_cmd_strs(ncmd);
+    
     return rv;
 }
 
