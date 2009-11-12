@@ -282,10 +282,8 @@ done:
         tpl_free(tn);
     if ( data )
         free(data);
-    if ( cmd.subsystem )
-        free(cmd.subsystem);
-    if ( cmd.value )
-        free(cmd.value);
+    free_net_cmd_strs(cmd);
+
     return rc;
 }
 

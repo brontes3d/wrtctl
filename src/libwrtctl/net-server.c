@@ -299,10 +299,7 @@ int default_handler( ns_t ns, dd_t dd ){
 
                 STAILQ_INSERT_TAIL( &(dd->sendq), out_packet, packet_queue );
 
-                if ( nc.subsystem )
-                    free(nc.subsystem);
-                if ( nc.value )
-                    free(nc.value);
+                free_net_cmd_strs(nc);
                 break;
             }
             if ( !handled ){

@@ -103,7 +103,7 @@ struct net_cmd {
 
 int create_net_cmd_packet( packet_t *p, uint16_t id, char *subsystem, char *value );
 int unpack_net_cmd_packet( net_cmd_t nc, packet_t p );
-#define free_net_cmd(x) \
+#define free_net_cmd_strs(x) \
     if ( x ) { \
         if ( x->subsystem ) \
             free(x->subsystem); \
