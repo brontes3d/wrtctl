@@ -58,5 +58,4 @@ class wrtctl(object):
 
     def __del__(self):
         if self.ctxObject:
-            pass
-##            ?deallocate_stunnel(self.ctxObject)
+            _wrtctl.kill_stunnel(self.ctxObject)

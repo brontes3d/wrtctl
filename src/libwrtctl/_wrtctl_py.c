@@ -16,14 +16,15 @@
 #include <wrtctl-net.h>
 
 
-static nc_t validObjectPointer( PyObject *pync ){
-    nc_t nc;
-    if ( !PyCObject_Check(pync) \
-            || !(nc = (nc_t)PyCObject_AsVoidPtr(pync)) ){
-        PyErr_Format(PyExc_ValueError, "Invalid nc_t object pointer received.");
+static void * validObjectPointer( PyObject *pync ){
+    void * p = NULL;
+
+    if ( !PyCObject_Check(pync)
+            || !(p = PyCObject_AsVoidPtr(pync)) ){
+        PyErr_Format(PyExc_ValueError, "Invalid object pointer received.");
         return NULL;
     }
-    return nc;
+    return p;
 }
 
 
@@ -93,10 +94,30 @@ static PyObject* Py_start_stunnel_client(PyObject *obj, PyObject *args) {
     }
     return PyCObject_FromVoidPtr((void*)ctx, deletectx);
 }
+
+
+static PyObject * Py_kill_stunnel( PyObject *obj, PyObject *args ){
+    PyObject * pyctx    = NULL;
+    stunnel_ctx_t ctx   = NULL;
+
+    if ( !PyArg_ParseTuple(args, "O", &pyctx) )
+        return NULL;
+    if ( !(ctx = (stunnel_ctx_t)validObjectPointer(pync)) )
+        return NULL;
+
+    kill_stunnel( &ctx );
+    Py_RETURN_NONE;
+}
+
 #else
 static PyObject* Py_start_stunnel_client(PyObject *obj, PyObject *args) {
     Py_RETURN_NONE;
 }
+
+static PyObject* Py_kill_stunnel(PyObject *obj, PyObject *args) {
+    Py_RETURN_NONE;
+}
+
 #endif
 
 static PyObject* Py_create_connection( PyObject *obj, PyObject *args ){
@@ -108,7 +129,7 @@ static PyObject* Py_create_connection( PyObject *obj, PyObject *args ){
 
     if ( !PyArg_ParseTuple(args, "Os|s", &pync, &hostname, &port) )
         return NULL;
-    if ( !(nc = validObjectPointer(pync)) )
+    if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
     if ( (rc = create_conn(nc, hostname, port)) != NET_OK ){
         PyErr_Format(
@@ -132,7 +153,7 @@ static PyObject* Py_queue_net_command( PyObject *obj, PyObject *args ){
  
     if ( !PyArg_ParseTuple(args, "Ois|s", &pync, &id, &subsystem, &value) )
         return NULL;
-    if ( !(nc = validObjectPointer(pync)) )
+    if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
     if ( (rc = create_net_cmd_packet(&sp, id, subsystem, value)) != NET_OK ){
         PyErr_Format(
@@ -156,7 +177,7 @@ static PyObject* Py_wait_on_response(PyObject *obj, PyObject *args){
 
     if ( !PyArg_ParseTuple(args, "O|ii", &pync, &timeoutSec, &flushSendQueue) )
         return NULL;
-    if ( !(nc = validObjectPointer(pync)) )
+    if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
 
     timeout.tv_sec = timeoutSec;
@@ -185,7 +206,7 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
     if ( !PyArg_ParseTuple(args, "O", &pync) )
         return NULL;
 
-    if ( !(nc = validObjectPointer(pync)) )
+    if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
 
     if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
@@ -299,6 +320,11 @@ static PyMethodDef _wrtctl_funcs[] = {
             "ctxobj = _wrtctl.start_stunnel_client(hostname, key_path='" \
             DEFAULT_KEY_PATH"', port='"WRTCTLD_DEFAULT_PORT"', wrtctlPort='" \
             WRTCTL_SSL_PORT"', wrtctldPort='"WRTCTLD_SSL_PORT"')" 
+        },
+
+        { "kill_stunnel",
+            Py_kill_stunnel,    METH_VARARGS,
+            "_wrtctl.kill_stunnel( ctxobj )"
         },
 
         { NULL, NULL }
