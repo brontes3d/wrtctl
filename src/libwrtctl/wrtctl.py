@@ -20,22 +20,21 @@ class wrtctl(object):
         self.ctxObject = None
 
     def __getOrSetDefault(param, defaultKey):
-        if param is None:
-            param = self.defaultParam[defaultKey]
-        else:
+        if param is not None:
             self.defaultParam[defaultKey] = param
+        return self.defaultParam[defaultKey]
 
     def start_stunnel_client(self, hostname, key_path=None, port=None, wrtctlPort=None, wrtctldPort=None):
-        self.__getOrSetDefault(hostname   , 'HOSTNAME')
-        self.__getOrSetDefault(key_path   , 'DEFAULT_KEY_PATH')
-        self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
-        self.__getOrSetDefault(wrtctlPort , 'WRTCTL_SSL_PORT')
-        self.__getOrSetDefault(wrtctldPort, 'WRTCTLD_SSL_PORT')
+        hostname    = self.__getOrSetDefault(hostname   , 'HOSTNAME')
+        key_path    = self.__getOrSetDefault(key_path   , 'DEFAULT_KEY_PATH')
+        port        = self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
+        wrtctlPort  = self.__getOrSetDefault(wrtctlPort , 'WRTCTL_SSL_PORT')
+        wrtctldPort = self.__getOrSetDefault(wrtctldPort, 'WRTCTLD_SSL_PORT')
         self.ctxObject = _wrtctl.start_stunnel_client(hostname, key_path, port, wrtctlPort, wrtctldPort)
 
     def create_connection(self, hostname=None, port=None):
-        self.__getOrSetDefault(hostname   , 'HOSTNAME')
-        self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
+        hostname    = self.__getOrSetDefault(hostname   , 'HOSTNAME')
+        port        = self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
         _wrtctl.create_connection(self.wrtctlObject, hostname, port)
 
     def queue_net_command(self, ID, subsystemStr, valueStr=''):
@@ -46,9 +45,9 @@ class wrtctl(object):
         rv = _wrtctl.wait_on_response(self.wrtctlObject, timeoutSec, flushSendQueue)
         if rv == self.defaultParam['NET_OK']:
             return 0
-        elif rv == self.defaultParam['NET_ERR_TIMEOUT']:
+        if rv == self.defaultParam['NET_ERR_TIMEOUT']:
             return 1;
-        if rv > 0:
+        if rv > 1:
             return -rv
         return rv
 
