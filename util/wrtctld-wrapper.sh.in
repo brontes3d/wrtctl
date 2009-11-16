@@ -1,0 +1,38 @@
+port="2450"
+moddir="@TOP_BUILDDIR@/src/mods/"
+
+wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir} -f -v"
+key_path="@TOP_BUILDDIR@/test/stunnel.pem"
+
+export WRTCTL_UCI_CONFDIR=@TOP_BUILDDIR@/test/config
+export WRTCTL_UCI_SAVEDIR=@TOP_BUILDDIR@/test/savedir
+export WRTCTL_SYS_INITD_DIR=@TOP_BUILDDIR@/test/systest
+export WRTCTL_SYS_SHUTDOWN_PATH=@TOP_BUILDDIR@/test/systest/shutdown
+
+create_conf_file() {
+   mkdir -p ${WRTCTL_UCI_CONFDIR} >/dev/null
+   mkdir -p ${WRTCTL_UCI_SAVEDIR} >/dev/null
+   cat <<-EOF > ${WRTCTL_UCI_CONFDIR}/test
+config 'anon_section'
+    option 'first_opt' '1'
+    option 'second_opt' '2'
+
+config 'anon_section'
+    option 'first_opt' '3'
+    option 'second_opt' '4'
+
+config 'section_type' 'section_name'
+    option 'optA' 'A'
+    option 'optB' 'B'
+EOF
+    rm -f ${WRTCTL_UCI_SAVEDIR}/test
+}
+
+create_conf_file
+args=""
+initial=""
+[ @STUNNEL@ -eq 1 ] && args="-k ${key_path}"
+[ -n "${VALGRIND}" ] && initial="valgrind --leak-check=full"
+
+@TOP_BUILDDIR@/src/bin/wrtctld -h &>/dev/null
+@TOP_BUILDDIR@/src/bin/.libs/lt-wrtctld -p ${port} -M ${moddir} -f -v -m sys-cmds,uci-cmds ${args} $@

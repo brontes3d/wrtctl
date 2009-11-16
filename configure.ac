@@ -69,7 +69,7 @@ if test x"$enable_python" = xyes; then
     AC_SUBST(PYTHON_CPPFLAGS)
     AC_SUBST(PYTHON_SITE_PKG)
 fi
-AM_CONDITIONAL(ENABLE_PYTHON, test x"enable_python" = xyes)
+AM_CONDITIONAL(ENABLE_PYTHON, test x"$enable_python" = xyes)
 
 AC_ARG_ENABLE( wrtctld,
     [  --enable-wrtctld            Build the wrtctl daemon [[default=yes]] ],
@@ -134,6 +134,7 @@ AC_CONFIG_FILES([
     src/libwrtctl/Makefile
     src/mods/Makefile
     test/Makefile
+    util/Makefile
 ])
 
 AC_OUTPUT

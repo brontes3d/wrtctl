@@ -26,3 +26,4 @@ test/*.log
 test/test.sh
 *.pyc
 *.pyo
+util/*.sh
