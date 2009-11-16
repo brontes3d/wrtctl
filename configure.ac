@@ -15,13 +15,6 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_CC_C_O
-AM_PATH_PYTHON
-
-AC_PYTHON_DEVEL( >= '2.5' )
-AC_SUBST(PYTHON_LDFLAGS)
-AC_SUBST(PYTHON_CPPFLAGS)
-AC_SUBST(PYTHON_SITE_PKG)
-
 
 
 AC_CHECK_LIB([dl], [dlopen])
@@ -62,6 +55,21 @@ AC_ARG_WITH( moduledir,
     [  --with-moduledir=DIR    Base directory for dynamically loadable modules],
     moduledir="$withval",
     moduledir="${libdir}/wrtctl")
+
+AC_ARG_ENABLE( python,
+    [  --enable-python             Build the python client module [[default=yes]] ],
+    enable_python="$enableval",
+    enable_python=yes)
+
+if test x"$enable_python" = xyes; then
+    AM_PATH_PYTHON
+
+    AC_PYTHON_DEVEL( >= '2.5' )
+    AC_SUBST(PYTHON_LDFLAGS)
+    AC_SUBST(PYTHON_CPPFLAGS)
+    AC_SUBST(PYTHON_SITE_PKG)
+fi
+AM_CONDITIONAL(ENABLE_PYTHON, test x"enable_python" = xyes)
 
 AC_ARG_ENABLE( wrtctld,
     [  --enable-wrtctld            Build the wrtctl daemon [[default=yes]] ],

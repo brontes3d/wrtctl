@@ -15,6 +15,7 @@ libwrtctl_la_SOURCES 	=  $(STUNNEL_SOURCES) \
 	wrtctl-log.c
 libwrtctl_la_LIBADD 	= -ldl
 
+if ENABLE_PYTHON
 moddir			= $(PYTHON_SITE_PKG)/wrtctl/
 mod_PROGRAMS 	= _wrtctl.so
 mod_DATA 		= wrtctl.py
@@ -23,3 +24,4 @@ _wrtctl_so_SOURCES	= _wrtctl_py.c
 _wrtctl_so_LDADD 	= libwrtctl.la
 _wrtctl_so_LDFLAGS 	= -shared $(PYTHON_LDFLAGS)
 _wrtctl_so_CFLAGS 	= $(AM_CFLAGS) $(PYTHON_CPPFLAGS) -fPIC
+endif
