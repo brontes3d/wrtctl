@@ -19,7 +19,7 @@ class wrtctl(object):
         self.wrtctlObject = _wrtctl.alloc_client(enable_log, verbose)
         self.ctxObject = None
 
-    def __getOrSetDefault(param, defaultKey):
+    def __getOrSetDefault(self, param, defaultKey):
         if param is not None:
             self.defaultParam[defaultKey] = param
         return self.defaultParam[defaultKey]
