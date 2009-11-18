@@ -144,22 +144,21 @@ static PyObject* Py_create_connection( PyObject *obj, PyObject *args ){
 
 static PyObject* Py_queue_net_command( PyObject *obj, PyObject *args ){
     PyObject *pync      = NULL;
-    int id;
-    char *subsystem     = NULL;
-    char *value         = "";
+    char *cmd_str       = NULL;
     nc_t nc             = NULL;
     packet_t sp         = NULL;
     int rc;
  
-    if ( !PyArg_ParseTuple(args, "Ois|s", &pync, &id, &subsystem, &value) )
+    if ( !PyArg_ParseTuple(args, "Os", &pync, &cmd_str) )
         return NULL;
     if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
-    if ( (rc = create_net_cmd_packet(&sp, id, subsystem, value)) != NET_OK ){
+
+    if ( (rc = line_to_packet(cmd_str, &sp)) != NET_OK ){
         PyErr_Format(
             PyExc_EnvironmentError,
-            "create_net_cmd_packet(%d, '%s', '%s') failed with error %d(%s)", 
-            id, subsystem, value, rc, net_strerror(rc)) ;
+            "line_to_packet() failed with error %d(%s)", 
+            rc, strerror(rc));
         return NULL;
     }
     nc_add_packet(nc, sp);
@@ -227,6 +226,8 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
     
     rv = Py_BuildValue("(iss)", ncmd.id, ncmd.subsystem, ncmd.value);
     free_net_cmd_strs(ncmd);
+    STAILQ_REMOVE( &(nc->dd->recvq), rp, packet, packet_queue);
+    free_packet(rp);
     
     return rv;
 }

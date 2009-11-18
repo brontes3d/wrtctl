@@ -37,10 +37,10 @@ class wrtctl(object):
         port        = self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
         _wrtctl.create_connection(self.wrtctlObject, hostname, port)
 
-    def queue_net_command(self, ID, subsystemStr, valueStr=''):
-        _wrtctl.queue_net_command(self.wrtctlObject, ID, subsystemStr, valueStr)
+    def queue_net_command(self, commandStr): 
+        _wrtctl.queue_net_command(self.wrtctlObject, commandStr)
 
-    def wait_on_response(self, timeoutSec=0, flushSendQueue=True):
+    def wait_on_response(self, timeoutSec=10, flushSendQueue=True):
         """Return 0=got response, 1=timeout, -n=error."""
         rv = _wrtctl.wait_on_response(self.wrtctlObject, timeoutSec, flushSendQueue)
         if rv == self.defaultParam['NET_OK']:
