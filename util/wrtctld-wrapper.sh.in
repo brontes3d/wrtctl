@@ -35,4 +35,5 @@ initial=""
 [ -n "${VALGRIND}" ] && initial="valgrind --leak-check=full"
 
 @TOP_BUILDDIR@/src/bin/wrtctld -h &>/dev/null
-@TOP_BUILDDIR@/src/bin/.libs/lt-wrtctld -p ${port} -M ${moddir} -f -v -m sys-cmds,uci-cmds ${args} $@
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:@TOP_BUILDDIR@/src/libwrtctl/.libs/"
+@TOP_BUILDDIR@/src/bin/.libs/wrtctld -p ${port} -M ${moddir} -f -v -m sys-cmds,uci-cmds ${args} $@
