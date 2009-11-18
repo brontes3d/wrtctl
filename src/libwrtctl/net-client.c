@@ -117,7 +117,6 @@ int line_to_packet(char * line, packet_t *sp) {
     if ( !(subsystem = strtok(line, ":")) 
             || !(cmd = strtok(NULL, ":")))
         return EINVAL;
-    printf("%s\n",cmd);
     if ( !strncmp(subsystem, "uci", 4) ){
         rc = parse_uci_cmd(cmd, sp);
     } else if ( !strncmp(subsystem, "daemon", 7) ){
