@@ -109,7 +109,10 @@ int unpack_net_cmd_packet( net_cmd_t nc, packet_t p );
     if ( x.value ) \
         free(x.value);
 
-
+/* Convert a command string to a net_cmd packet.  Caller is responsible for freeing the packet.
+ * This function makes extensive use of strtok(3), so line will be modified.
+ */
+int line_to_packet(char *line, packet_t *sp);
 
 
 /* Client and Server structures */
