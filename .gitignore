@@ -23,7 +23,8 @@ src/bin/wrtctld
 test/stunnel.pem
 test/*/
 test/*.log
-test/test.sh
+test/*.sh
+test/*.pid
 test/test.py
 *.pyc
 *.pyo

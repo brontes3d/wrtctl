@@ -6,9 +6,28 @@ else
 STUNNEL=0
 endif
 
+RUN_TESTS = shell_test
+if ENABLE_PYTHON
+RUN_TESTS += python_test
+endif
+
+
 EXTRA_DIST = savedir
 
 test.sh: test.sh.in
+	sed \
+		-e "s,[@]TOP_BUILDDIR[@],$(TBD),g" \
+		-e "s,[@]STUNNEL[@],$(STUNNEL),g" \
+		< $< > $@
+	chmod +x $@
+
+test.py: test.py.in
+	sed \
+		-e "s,[@]TOP_BUILDDIR[@],$(TBD),g" \
+		-e "s,[@]STUNNEL[@],$(STUNNEL),g" \
+		< $< > $@
+
+start-wrtctld.sh: start-wrtctld.sh.in
 	sed \
 		-e "s,[@]TOP_BUILDDIR[@],$(TBD),g" \
 		-e "s,[@]STUNNEL[@],$(STUNNEL),g" \
@@ -24,8 +43,14 @@ stunnel.pem:
 		| openssl req -new -x509 -days 2 -nodes -out stunnel.pem -keyout stunnel.pem
 	@echo
 
-check: test.sh stunnel.pem
+shell_test: test.sh
 	./test.sh
 
+python_test: test.py start-wrtctld.sh
+	python test.py
+	
+check: $(RUN_TESTS) stunnel.pem 
+
 clean-local:
-	rm -rf test.sh savedir config test.log wrtctld.log stunnel.pem
+	rm -rf test.sh savedir config test.log wrtctld.log stunnel.pem test.py \
+		start-wrtctld.sh start-wrtctl.pid

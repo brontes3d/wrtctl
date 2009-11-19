@@ -3,7 +3,7 @@ testdir="$(dirname $(readlink -f $0))"
 topdir="$(readlink -f ${testdir}/../)"
 
 port="2450"
-moddir="@TOP_BUILDDIR@/src/mods/"
+moddir="@TOP_BUILDDIR@/src/mods/.libs/"
 
 wrtctldp="@TOP_BUILDDIR@/src/bin/wrtctld -p ${port} -M ${moddir} -f -v"
 wrtctlp="@TOP_BUILDDIR@/src/bin/wrtctl -p ${port} -t localhost"
@@ -278,7 +278,7 @@ start_daemon() {
 }
 
 stop_daemon() {
-    if ! killall lt-wrtctld; then
+    if ! killall wrtctld; then
         echo "ERROR:  Failed to killall lt-wrtctld"
         fail
     fi
@@ -309,5 +309,6 @@ else
     run_daemon_tests -k "${key_path}"
     run_sys_tests -k "${key_path}"
 fi
+create_conf_file
 stop_daemon
 exit 0
