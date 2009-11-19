@@ -278,7 +278,7 @@ start_daemon() {
 }
 
 stop_daemon() {
-    if ! killall wrtctld; then
+    if ! killall wrtctld && ! killall lt-wrtctld; then
         echo "ERROR:  Failed to killall lt-wrtctld"
         fail
     fi
