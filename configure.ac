@@ -5,6 +5,7 @@ AC_CONFIG_AUX_DIR(build-aux)
 AM_INIT_AUTOMAKE([dist-bzip2 -Wno-portability])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_GNU_SOURCE
 
