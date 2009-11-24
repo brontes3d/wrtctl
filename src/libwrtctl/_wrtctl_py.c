@@ -102,7 +102,7 @@ static PyObject * Py_kill_stunnel( PyObject *obj, PyObject *args ){
 
     if ( !PyArg_ParseTuple(args, "O", &pyctx) )
         return NULL;
-    if ( !(ctx = (stunnel_ctx_t)validObjectPointer(pync)) )
+    if ( !(ctx = (stunnel_ctx_t)validObjectPointer(pyctx)) )
         return NULL;
 
     kill_stunnel( &ctx );
