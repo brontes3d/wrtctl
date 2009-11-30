@@ -243,12 +243,28 @@ int fork_stunnel( stunnel_ctx_t ctx ){
     if ( !ctx->pid ){
         char *argv[] = { STUNNEL_PATH, ctx->conf_file_path, NULL };
         char *envir[] = { NULL };
+        int rc;
+        FILE *orig_stderr = stderr;
 
         /* Hide output */
-        freopen( "/dev/null", "r", stdin);
-        freopen( "/dev/null", "w", stdout);
-        freopen( "/dev/null", "w", stderr);
+        if ( !freopen( "/dev/null", "r", stdin) ){
+            fprintf(stderr, "Failed to redirect stdin.  freopen: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        if ( !freopen( "/dev/null", "w", stdout) ){
+            fprintf(stderr, "Failed to redirect stout.  freopen: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        
+        if ( !freopen( "/dev/null", "w", stderr) ){
+            fprintf(stderr, "Failed to redirect sterr.  freopen: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
         execve(STUNNEL_PATH, argv, envir);
+        rc = errno;
+        fprintf(orig_stderr, "Failed to exec stunnel.  execve: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     } else {
         do {
