@@ -84,9 +84,9 @@ AC_ARG_ENABLE( internal-queue-h,
 )
 
 AC_ARG_ENABLE( stunnel,
-    [  --enable-stunnel[=PATH]   Enable stunnel wrappers [[no, /usr/bin/stunnel]]],
-    stunnel_path="$withval",
-    stunnel_path="no")
+    [  --enable-stunnel[=PATH]   Enable stunnel wrappers [[yes, /usr/bin/stunnel]]],
+    stunnel_path="$enableval",
+    stunnel_path="yes")
 
 if test x"$stunnel_path" != xno; then
     AM_CONDITIONAL(ENABLE_STUNNEL, true)
