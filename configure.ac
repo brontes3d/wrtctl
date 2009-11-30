@@ -5,6 +5,7 @@ AC_CONFIG_AUX_DIR(build-aux)
 AM_INIT_AUTOMAKE([dist-bzip2 -Wno-portability])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_GNU_SOURCE
 
@@ -56,6 +57,21 @@ AC_ARG_WITH( moduledir,
     moduledir="$withval",
     moduledir="${libdir}/wrtctl")
 
+AC_ARG_ENABLE( python,
+    [  --enable-python             Build the python client module [[default=yes]] ],
+    enable_python="$enableval",
+    enable_python=yes)
+
+if test x"$enable_python" = xyes; then
+    AM_PATH_PYTHON
+
+    AC_PYTHON_DEVEL( >= '2.5' )
+    AC_SUBST(PYTHON_LDFLAGS)
+    AC_SUBST(PYTHON_CPPFLAGS)
+    AC_SUBST(PYTHON_SITE_PKG)
+fi
+AM_CONDITIONAL(ENABLE_PYTHON, test x"$enable_python" = xyes)
+
 AC_ARG_ENABLE( wrtctld,
     [  --enable-wrtctld            Build the wrtctl daemon [[default=yes]] ],
     build_wrtctld="$enableval",
@@ -68,9 +84,9 @@ AC_ARG_ENABLE( internal-queue-h,
 )
 
 AC_ARG_ENABLE( stunnel,
-    [  --enable-stunnel[=PATH]   Enable stunnel wrappers [[no, /usr/bin/stunnel]]],
-    stunnel_path="$withval",
-    stunnel_path="no")
+    [  --enable-stunnel[=PATH]       Enable stunnel wrappers [[yes, /usr/bin/stunnel]]],
+    stunnel_path="$enableval",
+    stunnel_path="yes")
 
 if test x"$stunnel_path" != xno; then
     AM_CONDITIONAL(ENABLE_STUNNEL, true)
@@ -119,6 +135,7 @@ AC_CONFIG_FILES([
     src/libwrtctl/Makefile
     src/mods/Makefile
     test/Makefile
+    util/Makefile
 ])
 
 AC_OUTPUT

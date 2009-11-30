@@ -1,6 +1,6 @@
 #!/bin/sh
 [ ! -d build-aux ] && mkdir build-aux 
-aclocal || exit
+aclocal -I m4/ || exit
 autoheader || exit
 autoconf || exit
 libtoolize -f || exit

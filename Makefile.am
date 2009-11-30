@@ -1,4 +1,4 @@
-SUBDIRS=src test
+SUBDIRS=src test util
 
 doc_DATA = LICENSE.tpl
 

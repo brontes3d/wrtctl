@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <errno.h>
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"
@@ -31,7 +32,8 @@ char * load_module(mlh_t ml, md_t *mdp, char *module_path){
         goto err;
 
     if ( init( &md->mod_ctx ) != MOD_OK ){
-        asprintf(&errstr, "Failed to initialize %s.\n", module_path);
+        if ( asprintf(&errstr, "Failed to initialize %s.\n", module_path) == -1 )
+            err("asprintf: %s\n", strerror(errno));
         goto err;
     }
 

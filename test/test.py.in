@@ -1,0 +1,39 @@
+import sys
+import subprocess
+import time
+import os
+import signal
+import re
+
+sys.path.append('@TOP_BUILDDIR@/src/libwrtctl/.libs/')
+sys.path.append('@TOP_BUILDDIR@/src/libwrtctl/')
+import wrtctl
+
+print "Testing wrtctl python module"
+c = subprocess.Popen(['./start-wrtctld.sh'], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+time.sleep(1)
+rc=0
+
+try:
+    w = wrtctl.wrtctl()
+    w.create_connection('localhost')
+    w.queue_net_command('uci:get test..first_opt')
+    w.wait_on_response()
+    rc,_,str = w.get_net_response()
+
+    if rc != 0 or not re.match("test.[a-z0-9]*.first_opt=1", str):
+        raise OSError('Got invalid string or rc from wrtctld: %d,%s'
+            % (rc, str) )
+except Exception, e:
+    print "ERROR:  wrtctl python module failed."
+    print e
+    rc=1
+else:
+    print "OK"
+finally:
+    f = open('@TOP_BUILDDIR@/test/start-wrtctld.pid')
+    pid = int(f.readline())
+    f.close()
+    os.kill(pid, signal.SIGTERM)
+    
+sys.exit(rc)

@@ -23,4 +23,11 @@ src/bin/wrtctld
 test/stunnel.pem
 test/*/
 test/*.log
-test/test.sh
+test/*.sh
+test/*.pid
+test/test.py
+*.pyc
+*.pyo
+util/*.sh
+m4/libtool.m4
+m4/lt*.m4
