@@ -182,8 +182,8 @@ void sigchld_handler( int s ){
     int w = -1;
 
     w = waitpid(stunnel_child->pid, &status, WNOHANG);
-    if ( stunnel_child && w > 0 ){ 
-       if (WIFEXITED(status)) {
+    if ( stunnel_child && w > 0 ){
+        if (WIFEXITED(status)) {
             fprintf(stderr, "Unexpected stunnel exit: status=%d\n", WEXITSTATUS(status));
         } else if (WIFSIGNALED(status)) {
             fprintf(stderr, "Unexpected stunnel exit: killed by signal %d\n", WTERMSIG(status));
