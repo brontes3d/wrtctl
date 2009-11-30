@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "tpl.h"
 #include "wrtctl-int.h"
@@ -312,10 +313,18 @@ done:
 
 int wrtctl_tpl_oops(const char *format, ... ){
     int rc = 0;
-    if ( wrtctl_verbose )
-        rc = fprintf(stderr, format);
-    if ( wrtctl_enable_log )
-        syslog(LOG_ERR, format);
+    va_list ap;
+
+    if ( wrtctl_verbose ) {
+        va_start(ap, format);
+        rc = vfprintf(stderr, format, ap);
+        va_end(ap);
+    }
+    if ( wrtctl_enable_log ) {
+        va_start(ap, format);
+        vsyslog(LOG_ERR, format, ap);
+        va_end(ap);
+    }
     return rc > 0 ? rc : 1;
 }
 
