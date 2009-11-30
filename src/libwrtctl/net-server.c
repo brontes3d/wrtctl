@@ -381,7 +381,10 @@ int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
         default:
             err("daemon_mod_handler:  Unknown command '%u'\n", cmd->id);
             out_rc = NET_ERR_INVAL;
-            asprintf(&out_str, "Unknown command");
+            if ( asprintf(&out_str, "Unknown command") == -1 ){
+                err("asprintf: %s\n", strerror(errno));
+                out_str = NULL;
+            }
             break;
     }
     rc = create_net_cmd_packet(outp, out_rc, DAEMON_CMD_MAGIC, out_str);
@@ -399,7 +402,10 @@ int daemon_cmd_ping(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
     time_t t;
 
     if( time(&t) == ((time_t)-1) ){
-        asprintf(out_str, "time:  %s", strerror(errno));
+        if ( asprintf(out_str, "time:  %s", strerror(errno)) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         sys_rc = errno;
         goto done;
     }
@@ -422,14 +428,20 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
 
     
     if ( access(ns->shutdown_path, X_OK) != 0 ){
-        asprintf(out_str, "access:  %s", strerror(errno));
+        if ( asprintf(out_str, "access:  %s", strerror(errno)) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         sys_rc = errno;
         goto done;
     }
 
     pid = fork();
     if ( pid == -1 ){
-        asprintf(out_str, "fork:  %s", strerror(errno));
+        if ( asprintf(out_str, "fork:  %s", strerror(errno)) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         sys_rc = errno;
         goto done;
     }
@@ -446,7 +458,10 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
         return execve(ns->shutdown_path, argv, envir);
     } else {
         ns->shutdown = true;
-        asprintf(out_str, "Rebooting...");
+        if ( asprintf(out_str, "Rebooting...") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         sys_rc = MOD_OK;
     }
 

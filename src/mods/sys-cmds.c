@@ -88,7 +88,10 @@ int mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
         default:
             err("sys-cmds_handler:  Unknown command '%u'\n", cmd->id);
             out_rc = NET_ERR_INVAL;
-            asprintf(&out_str, "Unknown command");
+            if ( asprintf(&out_str, "Unknown command") == -1 ){
+                err("asprintf: %s\n", strerror(errno));
+                out_str = NULL;
+            }
             break;
     }
     rc = create_net_cmd_packet(outp, out_rc, SYS_CMDS_MAGIC, out_str);
@@ -114,7 +117,10 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
 
     if ( !value || !(p = strchr(value, ' '))  ){
         sys_rc = EINVAL;
-        asprintf(out_str, "Invalid argument list.");
+        if ( asprintf(out_str, "Invalid argument list.") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -127,7 +133,10 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
     }
     if ( access(dpath, X_OK) != 0 ){
         sys_rc = EPERM;
-        asprintf(out_str, "access:  %s", strerror(errno));
+        if ( asprintf(out_str, "access:  %s", strerror(errno)) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -145,14 +154,20 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
 
     if ( !valid ){
         sys_rc = EINVAL;
-        asprintf(out_str, "Invalid init command.");
+        if ( asprintf(out_str, "Invalid init command.") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
     pid = fork();
     if ( pid == -1 ){
         sys_rc = errno;
-        asprintf(out_str, "fork:  %s", strerror(errno));
+        if ( asprintf(out_str, "fork:  %s", strerror(errno)) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -167,16 +182,25 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
         /* Wait for the child to exit and grab the rc. */
         if ( waitpid( pid, &status, 0) != pid ){
             sys_rc = errno;
-            asprintf(out_str, "waitpid:  %s", strerror(errno));
+            if ( asprintf(out_str, "waitpid:  %s", strerror(errno)) ){
+                err("asprintf: %s\n", strerror(errno));
+                *out_str = NULL;
+            }
             goto done;
         }
         if ( !(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS) ){
             sys_rc = ECANCELED;
-            asprintf(out_str, "%s exited with failure.\n", daemon);
+            if ( asprintf(out_str, "%s exited with failure.\n", daemon) == -1 ){
+                err("asprintf: %s\n", strerror(errno));
+                *out_str = NULL;
+            }
         }
     }
 
-    asprintf(out_str, "%s %s success.\n", daemon, command);
+    if ( asprintf(out_str, "%s %s success.\n", daemon, command) == -1 ){
+        err("asprintf: %s\n", strerror(errno));
+        *out_str = NULL;
+    }
 
 done:
     if (daemon) free(daemon);

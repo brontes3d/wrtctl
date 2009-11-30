@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
 #include <uci.h>
 #include "wrtctl-net.h"
 
@@ -176,26 +177,38 @@ int uci_cmd_set(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
 
     if ( !value || !(vlen = strlen(value)) ){
         uci_rc = UCI_ERR_INVAL;
-        asprintf(out_str, "uci_cmd_set:  Invalid command line.");
+        if ( asprintf(out_str, "uci_cmd_set:  Invalid command line.") == -1 ){
+            err("asprintf: %s\n", strerror(errno))
+            *out_str = NULL;
+        }
         goto done;
     }
 
      if ( !(pso = strdup(value)) ){
         uci_rc = UCI_ERR_MEM;
-        asprintf(out_str, "uci_cmd_set:  Out of Memory.\n");
+        if ( asprintf(out_str, "uci_cmd_set:  Out of Memory.\n") == -1 ){
+            err("asprintf: %s\n", strerror(errno))
+            *out_str = NULL;
+        }
         goto done;
     }
  
     if ( !(pso = strtok(pso, "="))
-        || strlen(pso) >= vlen ){
+            || strlen(pso) >= vlen ){
         uci_rc = UCI_ERR_INVAL;
-        asprintf(out_str, "uci_cmd_set:  Invalid command line.");
+        if ( asprintf(out_str, "uci_cmd_set:  Invalid command line.") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
     if ( !(v = strdup(value + strlen(pso) + 1))){
         uci_rc = UCI_ERR_MEM;
-        asprintf(out_str, "uci_cmd_set:  Out of Memory.\n");
+        if ( asprintf(out_str, "uci_cmd_set:  Out of Memory.\n") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -244,7 +257,10 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
 
     if ( !value ){
         uci_rc = UCI_ERR_INVAL;
-        asprintf(out_str, "uci_cmd_get:  Invalid command line.");
+        if ( asprintf(out_str, "uci_cmd_get:  Invalid command line.") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -254,7 +270,10 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
      */
     if ( !(full_pso = strdup(value)) ){
         uci_rc = UCI_ERR_MEM;
-        asprintf(out_str, "uci_cmd_get:  Memory allocation failure.");
+        if ( asprintf(out_str, "uci_cmd_get:  Memory allocation failure.") == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
 
@@ -273,7 +292,10 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
         full_pso[strlen(full_pso)] = '.';
         full_pso[strlen(full_pso)] = '.';
         uci_rc = UCI_ERR_NOTFOUND;
-        asprintf(out_str, "%s not found", full_pso);
+        if ( asprintf(out_str, "%s not found", full_pso) == -1 ){
+            err("asprintf: %s\n", strerror(errno));
+            *out_str = NULL;
+        }
         goto done;
     }
     
@@ -296,7 +318,10 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
                 }
 
                 if ( !(listbuf=(char*)malloc(sizeof(char)*(listlen+1))) ){
-                    asprintf(out_str, "Insufficient memory.");
+                    if ( asprintf(out_str, "Insufficient memory.") == -1 ){
+                        err("asprintf: %s\n", strerror(errno));
+                        *out_str = NULL;
+                    }
                     uci_rc = UCI_ERR_MEM;
                     goto done;
                 }
