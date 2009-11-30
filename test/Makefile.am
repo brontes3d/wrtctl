@@ -49,7 +49,7 @@ shell_test: test.sh
 python_test: test.py start-wrtctld.sh
 	python test.py
 	
-check: $(RUN_TESTS) stunnel.pem 
+check: stunnel.pem $(RUN_TESTS)
 
 clean-local:
 	rm -rf test.sh savedir config test.log wrtctld.log stunnel.pem test.py \
