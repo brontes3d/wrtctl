@@ -12,8 +12,6 @@ RUN_TESTS += python_test
 endif
 
 
-EXTRA_DIST = savedir
-
 test.sh: test.sh.in
 	sed \
 		-e "s,[@]TOP_BUILDDIR[@],$(TBD),g" \
@@ -52,5 +50,5 @@ python_test: test.py start-wrtctld.sh
 check: stunnel.pem $(RUN_TESTS)
 
 clean-local:
-	rm -rf test.sh savedir config test.log wrtctld.log stunnel.pem test.py \
+	rm -rf test.sh config test.log wrtctld.log stunnel.pem test.py \
 		start-wrtctld.sh start-wrtctl.pid
