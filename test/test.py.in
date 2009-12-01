@@ -6,7 +6,7 @@ import signal
 import re
 
 sys.path.append('@TOP_BUILDDIR@/src/libwrtctl/.libs/')
-sys.path.append('@TOP_BUILDDIR@/src/libwrtctl/')
+sys.path.append('@TOP_SRCDIR@/src/libwrtctl/')
 import wrtctl
 
 print "Testing wrtctl python module"

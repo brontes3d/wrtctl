@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "shutdown: $@" > "$(dirname $0)"/log
+echo "shutdown: $@" > shutdown.test.log

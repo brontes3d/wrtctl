@@ -6,6 +6,8 @@ endif
 lib_LTLIBRARIES	= libwrtctl.la
 include_HEADERS = wrtctl-net.h wrtctl-log.h 
 
+EXTRA_DIST = wrtctl-int.h tpl.h queue.h
+
 libwrtctl_la_SOURCES 	=  $(STUNNEL_SOURCES) \
 	mod.c \
 	net-client.c \
@@ -18,7 +20,7 @@ libwrtctl_la_LIBADD 	= -ldl
 if ENABLE_PYTHON
 moddir			= $(prefix)$(PYTHON_SITE_PKG)/wrtctl/
 mod_LTLIBRARIES = _wrtctl.la
-mod_DATA 		= wrtctl.py
+dist_mod_DATA 		= wrtctl.py
 
 _wrtctl_la_SOURCES	= _wrtctl_py.c
 _wrtctl_la_LIBADD 	= libwrtctl.la

@@ -6,6 +6,9 @@ STUNNEL=0
 endif
 
 util_scripts = py-wrapper.sh wrtctld-wrapper.sh
+
+EXTRA_DIST = py-wrapper.sh.in wrtctld-wrapper.sh.in
+
 all: $(util_scripts)
 
 SED_REGEXP =  -e "s,[@]TOP_BUILDDIR[@],$(TBD),g" \

@@ -11,8 +11,8 @@ key_path="${testdir}/stunnel.pem"
 
 export WRTCTL_UCI_CONFDIR=${testdir}/config
 export WRTCTL_UCI_SAVEDIR=${testdir}/savedir
-export WRTCTL_SYS_INITD_DIR=${testdir}/systest
-export WRTCTL_SYS_SHUTDOWN_PATH=${testdir}/systest/shutdown
+export WRTCTL_SYS_INITD_DIR=@TOP_SRCDIR@/test/systest
+export WRTCTL_SYS_SHUTDOWN_PATH=@TOP_SRCDIR@/test/systest/shutdown
 
 create_conf_file() {
    mkdir -p ${WRTCTL_UCI_CONFDIR} >/dev/null
@@ -161,9 +161,9 @@ daemon_noexec_tests=(
 
 sys_tests=(
     "run"   0   "initd.test start success"                  "sys:initd initd.test start"
-    "grep"  0   "initd.test: start"                         "${WRTCTL_SYS_INITD_DIR}/log"
+    "grep"  0   "initd.test: start"                         "@TOP_BUILDDIR@/test/initd.test.log"
     "run"   0   "initd.test stop success"                   "sys:initd initd.test stop"
-    "grep"  0   "initd.test: stop"                          "${WRTCTL_SYS_INITD_DIR}/log"
+    "grep"  0   "initd.test: stop"                          "@TOP_BUILDDIR@/test/initd.test.log"
     "run"   1   "Invalid argument to sys\.initd"            "sys:initd initd.test invalid"
     "run"   1   "22, Invalid init command"                  "sys:initd initd.test startblah"
     "run"   1   "1, access:  No such file or directory"     "sys:initd nofile start"

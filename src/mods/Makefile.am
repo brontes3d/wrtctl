@@ -1,4 +1,4 @@
-MOD_CFLAGS = -fPIC -I$(top_builddir)/src/libwrtctl/
+MOD_CFLAGS = -fPIC -I$(top_srcdir)/src/libwrtctl/
 
 
 moddir = $(libdir)/wrtctl/modules/
