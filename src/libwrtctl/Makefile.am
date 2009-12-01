@@ -18,9 +18,9 @@ libwrtctl_la_SOURCES 	=  $(STUNNEL_SOURCES) \
 libwrtctl_la_LIBADD 	= -ldl
 
 if ENABLE_PYTHON
-moddir			= $(prefix)$(PYTHON_SITE_PKG)/wrtctl/
+moddir			= $(PYTHON_SITE_PKG)/wrtctl/
 mod_LTLIBRARIES = _wrtctl.la
-dist_mod_DATA 		= wrtctl.py
+dist_mod_DATA 	= wrtctl.py __init__.py
 
 _wrtctl_la_SOURCES	= _wrtctl_py.c
 _wrtctl_la_LIBADD 	= libwrtctl.la
