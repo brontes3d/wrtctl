@@ -31,3 +31,5 @@ test/test.py
 util/*.sh
 m4/libtool.m4
 m4/lt*.m4
+*.tar.bz2
+*.tar.gz
