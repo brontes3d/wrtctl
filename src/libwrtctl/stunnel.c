@@ -157,7 +157,7 @@ int write_stunnel_conf(
     }
 
     if ( access(key_path, R_OK) ){
-        fprintf(stderr, "write_stunnel_conf:  unable to read %s.\n", key_path);
+        fprintf(stderr, "write_stunnel_conf:  unable to read keyfile, %s.\n", key_path);
         return EPERM;
     }
 
