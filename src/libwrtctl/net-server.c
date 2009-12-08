@@ -157,7 +157,6 @@ done:
 void free_ns(ns_t *ns){
     if ( (*ns) ){
         dd_t dd, dd_tmp;
-        md_t md, md_tmp;
 
         if ( (*ns)->listen_fd != -1 )
             close((*ns)->listen_fd);
