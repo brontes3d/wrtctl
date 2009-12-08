@@ -123,10 +123,23 @@ else
         "Default location to look for modules.")
 fi
 
-keydir="`expr "${sysconfdir}"/wrtctl/key.pem : '${prefix}\(.*\)'`" 
+# Hardcoded file locations and ports... will anyone care?
 AC_DEFINE_UNQUOTED( [DEFAULT_KEY_PATH],
-    ["$keydir"],
+    "/etc/wrtctl/key.pem",
     "Default key path when using stunnel wrappers")
+AC_DEFINE_UNQUOTED( [WRTCTLD_DEFAULT_PIDFILE], 
+    "/var/run/wrtctld.pid",
+    "Lockfile path" )
+AC_DEFINE_UNQUOTED( [WRTCTLD_DEFAULT_PORT],
+    "2450",
+    "Unencrypted traffic port" )
+AC_DEFINE_UNQUOTED( [WRTCTL_SSL_PORT],
+    "2451",
+    "Local wrtctl stunnel traffic" )
+AC_DEFINE_UNQUOTED( [WRTCTLD_SSL_PORT],
+    "2452",
+    "Remote wrtctld stunnel traffic" )
+
 
 AC_CONFIG_FILES([
     Makefile
