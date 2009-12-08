@@ -38,7 +38,7 @@
 #include "wrtctl-net.h"
 
 bool verbose = false;
-bool daemonize = true;
+bool do_daemonize = true;
 
 void usage() {
     printf("%s\n", PACKAGE_STRING);
@@ -63,11 +63,12 @@ void usage() {
 
 
  
-/* server, port, modules, debug, daemonize, module_dir, verbose */
+/* server, port, modules, debug, do_daemonize, module_dir, verbose */
 int main(int argc, char **argv){
     int rc = 0;
     char *modules = NULL;
     char *port = NULL;
+    char *pidfile = NULL;
     ns_t ns = NULL;
 
 #ifdef ENABLE_STUNNEL
@@ -85,6 +86,7 @@ int main(int argc, char **argv){
             { "verbose",    no_argument,        NULL,   'v'},
             { "foreground", no_argument,        NULL,   'f'},
             { "modules_dir",required_argument,  NULL,   'M'},
+            { "pidfile",    required_argument,  NULL,   'P'},
 #ifdef ENABLE_STUNNEL
             { "ssl_client", required_argument,  NULL,   'C'},
             { "ssl_server", required_argument,  NULL,   'S'},
@@ -114,13 +116,16 @@ int main(int argc, char **argv){
                 verbose = true;
                 break;
             case 'f':
-                daemonize = false;
+                do_daemonize = false;
                 break;
             case 'M':
                 if ( setenv("WRTCTL_MODULE_DIR", optarg, 1) != 0){
                     perror("setenv: ");
                     rc = errno;
                 }
+                break;
+            case 'P':
+                pidfile = optarg;
                 break;
             case 'h':
                 usage();
@@ -146,19 +151,31 @@ int main(int argc, char **argv){
 
     if ( !port )
         port = WRTCTLD_DEFAULT_PORT;
+
+    if ( !pidfile )
+        pidfile = WRTCTLD_DEFAULT_PIDFILE;
     
     if ( rc != 0 )
         exit(EXIT_FAILURE);
     
-    if ( daemonize )
+    if ( do_daemonize )
         openlog("wrtctld", LOG_PID, LOG_DAEMON);
    
-    if ( (rc = create_ns(&ns, port, modules, daemonize, verbose && !daemonize)) != NET_OK ){
+    if ( (rc = create_ns(&ns, port, modules, do_daemonize, verbose && !do_daemonize)) != NET_OK ){
         fprintf(stderr, "create_ns: %s\n", net_strerror(rc));
         rc = EXIT_FAILURE;
         goto shutdown;
     }
 
+    if ( do_daemonize ) {
+        /* Must be done before starting stunnel as we mess with signal handlers */
+        if ( daemonize(pidfile) != NET_OK ){
+            err("Failed to daemonize.\n");
+            rc = EXIT_FAILURE;
+            goto shutdown;
+        }
+    }
+ 
     if ( modules )
         free(modules);
 #ifdef ENABLE_STUNNEL
@@ -185,7 +202,7 @@ int main(int argc, char **argv){
 shutdown:
     if ( ns )
         free_ns(&ns);
-    if ( daemonize )
+    if ( do_daemonize )
         closelog();
     exit(rc == NET_OK ? EXIT_SUCCESS : EXIT_FAILURE);
 }

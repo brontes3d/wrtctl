@@ -41,6 +41,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <time.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <wrtctl-log.h>
 #include "wrtctl-int.h"
@@ -501,3 +504,94 @@ done:
     (*out_rc) = (uint16_t)sys_rc;
     return rc;
 }
+
+
+static void fork_sighandler(int signum){
+    switch(signum){
+        case SIGALRM:
+        case SIGCHLD:
+            exit(EXIT_FAILURE);
+            break;
+        case SIGUSR1:
+            exit(EXIT_SUCCESS);
+            break;
+    }
+}
+
+int daemonize( const char *pidfile ) {
+    /*
+     * Thanks to: http://www.itp.uzh.ch/~dpotter/howto/daemonize
+     */
+    pid_t pid, sid, parent;
+    int rc;
+
+    if ( getppid() == 1 )
+        return 0;
+
+    if ( pidfile ){
+        int fp;
+        if ( (fp = open(pidfile, O_RDWR|O_CREAT, 0640)) < 0 ){
+            rc = errno;
+            err("open: %s\n", strerror(errno));
+            return NET_ERR_FD;
+        }
+    }
+
+    signal(SIGALRM, fork_sighandler);
+    signal(SIGCHLD, fork_sighandler);
+    signal(SIGUSR1, fork_sighandler);
+
+    pid = fork();
+    if ( pid < 0 ){
+        rc = errno;
+        err("fork: %s\n", strerror(errno));
+        return NET_ERR_MEM;
+    }
+    if ( pid > 0 ){
+        alarm(2);
+        pause();
+        exit(EXIT_FAILURE);
+    }
+    
+    parent = getppid();
+    signal(SIGCHLD,SIG_DFL);
+    signal(SIGTSTP,SIG_IGN);
+    signal(SIGTTOU,SIG_IGN);
+    signal(SIGTTIN,SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGTERM,SIG_DFL);
+
+    umask(0);
+
+    if ( (sid = setsid()) < 0 ){
+        rc = errno;
+        err("setsid:  %s\n", strerror(errno));
+        return NET_ERR;
+    }
+
+    if ( (chdir("/")) < 0 ){
+        rc = errno;
+        err("chdir: %s\n", strerror(errno));
+        return NET_ERR;
+    }
+
+    if ( !freopen("/dev/null", "r", stdin) ){
+        err("Failed to redirect stdin.  freopen: %s\n", strerror(errno));
+        return NET_ERR;
+    }
+    if ( !freopen("/dev/null", "w", stdout) ){
+        err("Failed to redirect stdout.  freopen: %s\n", strerror(errno));
+        return NET_ERR;
+    }
+    if ( !freopen("/dev/null", "r", stderr) ){
+        err("Failed to redirect stderr.  freopen: %s\n", strerror(errno));
+        return NET_ERR;
+    }
+
+    kill(parent, SIGUSR1);
+    return NET_OK;
+}
+
+
+
+
