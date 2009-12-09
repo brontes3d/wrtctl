@@ -165,7 +165,7 @@ struct net_server {
  * commas, of the modules that need to be loaded.
  *  Returns a net_errno.
  */
-int create_ns( ns_t *ns, char *port, char *modules, bool enable_log, bool verbose );
+int create_ns( ns_t *ns, char *addr, char *port, char *modules, bool enable_log, bool verbose );
 
 void free_ns( ns_t *ns );
 

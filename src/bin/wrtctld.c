@@ -53,12 +53,14 @@ void usage() {
         DEFAULT_MODULE_DIR);
     printf("\t-P,--pidfile <path>           Path for pid/lockfile [%s].\n", WRTCTLD_DEFAULT_PIDFILE);
 #ifdef ENABLE_STUNNEL
+    printf("\t-l,--listen_address <address> Address to listen on [127.0.0.1].\n");
     printf("\nSSL Optional Arguments:\n");
     printf("\t-C,--ssl_client <port>        Port for local stunnel wrapper [%s].\n", WRTCTL_SSL_PORT);
     printf("\t-S,--ssl_server <port>        Port for remote stunnel wrapper [%s].\n", WRTCTLD_SSL_PORT);
     printf("\t-k,--key_path <path>          Path to shared SSL certificate [%s].\n", DEFAULT_KEY_PATH);
+#else 
+    printf("\t-l,--listen_address <address> Address to listen on [0.0.0.0].\n");
 #endif
- 
     return;
 }
 
@@ -67,9 +69,10 @@ void usage() {
 /* server, port, modules, debug, do_daemonize, module_dir, verbose */
 int main(int argc, char **argv){
     int rc = 0;
-    char *modules = NULL;
-    char *port = NULL;
-    char *pidfile = NULL;
+    char *modules           = NULL;
+    char *port              = NULL;
+    char *pidfile           = NULL;
+    char *listen_address    = NULL;
     ns_t ns = NULL;
 
 #ifdef ENABLE_STUNNEL
@@ -81,25 +84,26 @@ int main(int argc, char **argv){
         int c;
         int oi = 0;
         static struct option lo[] = {
-            { "help",       no_argument,        NULL,   'h'},
-            { "port",       required_argument,  NULL,   'p'},
-            { "modules",    required_argument,  NULL,   'm'},
-            { "verbose",    no_argument,        NULL,   'v'},
-            { "foreground", no_argument,        NULL,   'f'},
-            { "modules_dir",required_argument,  NULL,   'M'},
-            { "pidfile",    required_argument,  NULL,   'P'},
+            { "help",           no_argument,        NULL,   'h'},
+            { "port",           required_argument,  NULL,   'p'},
+            { "modules",        required_argument,  NULL,   'm'},
+            { "verbose",        no_argument,        NULL,   'v'},
+            { "foreground",     no_argument,        NULL,   'f'},
+            { "modules_dir",    required_argument,  NULL,   'M'},
+            { "pidfile",        required_argument,  NULL,   'P'},
+            { "listen_address", required_argument,  NULL,   'l'},
 #ifdef ENABLE_STUNNEL
-            { "ssl_client", required_argument,  NULL,   'C'},
-            { "ssl_server", required_argument,  NULL,   'S'},
-            { "key_path",   required_argument,  NULL,   'k'},
+            { "ssl_client",     required_argument,  NULL,   'C'},
+            { "ssl_server",     required_argument,  NULL,   'S'},
+            { "key_path",       required_argument,  NULL,   'k'},
 #endif
             { 0,            0,                  0,      0}
         };
 
 #ifdef ENABLE_STUNNEL
-        c = getopt_long(argc, argv, "p:m:vfM:hC:S:k:", lo, &oi);
+        c = getopt_long(argc, argv, "p:m:vfM:hC:S:k:P:l:", lo, &oi);
 #else
-        c = getopt_long(argc, argv, "p:m:vfM:h", lo, &oi);
+        c = getopt_long(argc, argv, "p:m:vfM:hP:l:", lo, &oi);
 #endif
         if ( c == -1 ) break;
 
@@ -128,6 +132,9 @@ int main(int argc, char **argv){
             case 'P':
                 pidfile = optarg;
                 break;
+            case 'l':
+                listen_address = optarg;
+                break;
             case 'h':
                 usage();
                 goto shutdown;
@@ -155,6 +162,11 @@ int main(int argc, char **argv){
 
     if ( !pidfile )
         pidfile = WRTCTLD_DEFAULT_PIDFILE;
+
+#ifdef ENABLE_STUNNEL
+    if ( !listen_address )
+        listen_address = "127.0.0.1";
+#endif
     
     if ( rc != 0 )
         exit(EXIT_FAILURE);
@@ -162,7 +174,13 @@ int main(int argc, char **argv){
     if ( do_daemonize )
         openlog("wrtctld", LOG_PID, LOG_DAEMON);
    
-    if ( (rc = create_ns(&ns, port, modules, do_daemonize, verbose && !do_daemonize)) != NET_OK ){
+    if ( (rc = create_ns(
+            &ns,
+            listen_address,
+            port,
+            modules,
+            do_daemonize,
+            verbose && !do_daemonize)) != NET_OK ){
         fprintf(stderr, "create_ns: %s\n", net_strerror(rc));
         rc = EXIT_FAILURE;
         goto shutdown;

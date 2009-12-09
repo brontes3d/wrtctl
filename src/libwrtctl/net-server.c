@@ -56,7 +56,7 @@ int     daemon_mod_handler  (void *ctx, net_cmd_t cmd, packet_t *outp);
 int     daemon_cmd_ping     (ns_t ns, char *unused, uint16_t *out_rc, char **out_str);
 int     daemon_cmd_reboot   (ns_t ns, char *unused, uint16_t *out_rc, char **out_str);
 
-int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool verbose){
+int create_ns(ns_t *ns, char *addr, char *port, char *module_list, bool enable_log, bool verbose){
     int rc = NET_OK;
     md_t daemon_mod = NULL;
     char *shutdown_path = NULL;
@@ -81,7 +81,7 @@ int create_ns(ns_t *ns, char *port, char *module_list, bool enable_log, bool ver
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if ( (rc = getaddrinfo(NULL, port, &hints, &res)) != 0 ){
+    if ( (rc = getaddrinfo(addr, port, &hints, &res)) != 0 ){
         err("getaddrinfo: %s\n", gai_strerror(rc));
         rc = NET_ERR_FD;
         goto err;
