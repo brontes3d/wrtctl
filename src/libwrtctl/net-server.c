@@ -522,16 +522,18 @@ int daemonize( const char *pidfile ) {
      * Thanks to: http://www.itp.uzh.ch/~dpotter/howto/daemonize
      */
     pid_t pid, sid, parent;
-    int rc;
+    int rc, fp;
+    char pidbuf[8];
+    size_t len = 8;
 
     if ( getppid() == 1 )
         return 0;
 
     if ( pidfile ){
-        int fp;
+        char pid[8];
         if ( (fp = open(pidfile, O_RDWR|O_CREAT, 0640)) < 0 ){
             rc = errno;
-            err("open: %s\n", strerror(errno));
+            err("Error opening pidfile: %s\n", strerror(errno));
             return NET_ERR_FD;
         }
     }
@@ -547,11 +549,25 @@ int daemonize( const char *pidfile ) {
         return NET_ERR_MEM;
     }
     if ( pid > 0 ){
+        close(fp);
         alarm(2);
         pause();
         exit(EXIT_FAILURE);
     }
-    
+  
+    /* We try to write our pid to the lockfile, but if it fails,
+     * the error is logged and then ignored.
+     */
+    pid = getpid();
+    if ( (len = snprintf(pidbuf, 8, "%u\n", pid)) >= 8 ){
+        err("Pid buffer longer than 8 characters.  Will not write pid.");
+    } else {
+        if ( write(fp, pidbuf, strlen(pidbuf)) != len ){
+            rc = errno;
+            err("Error writing pidfile: %s\n", strerror(errno));
+        }
+    }
+
     parent = getppid();
     signal(SIGCHLD,SIG_DFL);
     signal(SIGTSTP,SIG_IGN);
