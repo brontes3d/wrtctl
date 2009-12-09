@@ -51,6 +51,7 @@ void usage() {
     printf("\t-m,--modules mod1,mod2...     Modules to load.\n");
     printf("\t-M,--modules_dir <path>       Directory containing modules [%s].\n",
         DEFAULT_MODULE_DIR);
+    printf("\t-P,--pidfile <path>           Path for pid/lockfile [%s].\n", WRTCTLD_DEFAULT_PIDFILE);
 #ifdef ENABLE_STUNNEL
     printf("\nSSL Optional Arguments:\n");
     printf("\t-C,--ssl_client <port>        Port for local stunnel wrapper [%s].\n", WRTCTL_SSL_PORT);
