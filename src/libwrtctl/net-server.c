@@ -530,7 +530,6 @@ int daemonize( const char *pidfile ) {
         return 0;
 
     if ( pidfile ){
-        char pid[8];
         if ( (fp = open(pidfile, O_RDWR|O_CREAT, 0640)) < 0 ){
             rc = errno;
             err("Error opening pidfile: %s\n", strerror(errno));

@@ -169,6 +169,9 @@ int create_ns( ns_t *ns, char *addr, char *port, char *modules, bool enable_log,
 
 void free_ns( ns_t *ns );
 
+/* Daemonize wrapper */
+int daemonize( const char * pidfile );
+
 /* Default server loop.  Runs through connections, accepts and hands any packets off
  * to the server handler.
  *  Returns a net_errno.
