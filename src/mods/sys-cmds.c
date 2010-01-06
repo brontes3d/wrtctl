@@ -139,7 +139,7 @@ int sys_cmd_initd(sysh_ctx_t syshc, char *value, uint16_t *out_rc, char **out_st
     int rc = 0;
     pid_t pid;
     char *dpath, *daemon, *command, *p;
-    static char *valid_commands[] = {"restart", "stop", "start", NULL};
+    static char *valid_commands[] = {"restart", "stop", "start", "reload", "enable", "disable", NULL};
     size_t len;
     bool valid = false;
     int i;
