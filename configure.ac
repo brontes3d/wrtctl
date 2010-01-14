@@ -125,7 +125,7 @@ fi
 
 # Hardcoded file locations and ports... will anyone care?
 AC_DEFINE_UNQUOTED( [DEFAULT_KEY_PATH],
-    "/etc/wrtctl/key.pem",
+    "/etc/stunnel/wrtctl.pem",
     "Default key path when using stunnel wrappers")
 AC_DEFINE_UNQUOTED( [WRTCTLD_DEFAULT_PIDFILE], 
     "/var/run/wrtctld.pid",
