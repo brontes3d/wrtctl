@@ -105,7 +105,8 @@ enum mod_errno {
 #define UCI_CMD_GET     (uint16_t)2
 #define UCI_CMD_COMMIT  (uint16_t)3
 #define UCI_CMD_REVERT  (uint16_t)4
-#define UCI_CMD_MAX     (uint16_t)5
+#define UCI_CMD_DELETE  (uint16_t)5
+#define UCI_CMD_MAX     (uint16_t)6
 
 /* System Commands module, NET packet */
 #define SYS_CMDS_MAGIC "SYS"

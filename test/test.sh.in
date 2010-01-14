@@ -144,6 +144,10 @@ uci_tests=(
     #"run"   0   "test\.cfg[0-9a-z]+\.first_opt=set3"        "uci:get test..first_opt"
     "run"   0   ""                                          "uci:commit"
     "run"   0   "test\.section_name.optA=A"                 "uci:get test.section_name.optA"
+    "run"   0   ""                                          "uci:delete test.section_name.optA"
+    "run"   1   "3, test.section_name.optA not found"       "uci:get test.section_name.optA"
+    "run"   0   ""                                          "uci:commit test"
+    "run"   1   "3, test.section_name.optA not found"       "uci:get test.section_name.optA"
 )
 
 daemon_tests=(

@@ -281,6 +281,13 @@ int parse_uci_cmd(char *cmdline, packet_t *sp){
         }
         id = (uint16_t)UCI_CMD_REVERT;
         nc_value = option;
+    } else if ( !strncmp(cmd, "delete", 7) ){
+        if ( !option || value ){
+            fprintf(stderr, "Invalid UCI element string.\n");
+            return EINVAL;
+        }
+        id = (uint16_t)UCI_CMD_DELETE;
+        nc_value = option;
     } else {
         fprintf(stderr, "Invalid UCI command line.\n");
         return EINVAL;

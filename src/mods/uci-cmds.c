@@ -105,9 +105,9 @@ int uci_load_package            (ucih_ctx_t ucih, uci_package_t *package, char *
 int uci_fill_section            (ucih_ctx_t ucih, char **pso);
 
 int uci_cmd_set     (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
-int uci_cmd_get     (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
 int uci_cmd_commit  (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
 int uci_cmd_revert  (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str);
+int uci_cmd_get_del (ucih_ctx_t ucih, char *value, uint16_t *out_rc,  char **out_str, bool delete);
 
 int mod_init(void **mod_ctx){
     int rc = MOD_OK;
@@ -182,7 +182,7 @@ int mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
             rc = uci_cmd_set(ucihc, cmd->value, &out_rc, &out_str);
             break;
         case UCI_CMD_GET:
-            rc = uci_cmd_get(ucihc, cmd->value, &out_rc, &out_str);
+            rc = uci_cmd_get_del(ucihc, cmd->value, &out_rc, &out_str, false);
             break;
         case UCI_CMD_COMMIT:
             rc = uci_cmd_commit(ucihc, cmd->value, &out_rc, &out_str);
@@ -190,7 +190,10 @@ int mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
         case UCI_CMD_REVERT:
             rc = uci_cmd_revert(ucihc, cmd->value, &out_rc, &out_str);
             break;
-    }
+        case UCI_CMD_DELETE:
+            rc = uci_cmd_get_del(ucihc, cmd->value, &out_rc, &out_str, true);
+            break;
+     }
 
     rc = create_net_cmd_packet(outp, out_rc, UCI_CMDS_MAGIC, out_str);
     if (out_str)
@@ -278,7 +281,7 @@ done:
     return rc;
 }
 
-int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str){
+int uci_cmd_get_del(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str, bool delete){
     int             uci_rc = UCI_OK;
     struct uci_ptr  ucip;
     bool            restore_pso = false;
@@ -288,7 +291,7 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
 
     if ( !value ){
         uci_rc = UCI_ERR_INVAL;
-        if ( asprintf(out_str, "uci_cmd_get:  Invalid command line.") == -1 ){
+        if ( asprintf(out_str, "uci_cmd_get_del:  Invalid command line.") == -1 ){
             err("asprintf: %s\n", strerror(errno));
             *out_str = NULL;
         }
@@ -301,7 +304,7 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
      */
     if ( !(full_pso = strdup(value)) ){
         uci_rc = UCI_ERR_MEM;
-        if ( asprintf(out_str, "uci_cmd_get:  Memory allocation failure.") == -1 ){
+        if ( asprintf(out_str, "uci_cmd_get_del:  Memory allocation failure.") == -1 ){
             err("asprintf: %s\n", strerror(errno));
             *out_str = NULL;
         }
@@ -309,7 +312,7 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
     }
 
     if ( (uci_rc = uci_fill_section(ucihc, &full_pso)) != UCI_OK ){
-        uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_cmd_get:uci_fill_section");
+        uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_cmd_get_del:uci_fill_section");
         goto done;
     }
     
@@ -330,6 +333,18 @@ int uci_cmd_get(ucih_ctx_t ucihc, char *value, uint16_t *out_rc, char **out_str)
         goto done;
     }
     
+
+    if ( delete ){
+        if ( (uci_rc = uci_delete(ucihc->uci_ctx, &ucip)) != UCI_OK ){
+            uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_cmd_get_del:uci_delete");
+            goto done;
+        }
+        if ( (uci_rc = uci_save(ucihc->uci_ctx, ucip.p)) != UCI_OK ){
+            uci_get_errorstr(ucihc->uci_ctx, out_str, "uci_cmd_get_del:uci_save");
+        }
+        goto done;
+    }
+
     restore_pso = true;
 
     switch (ucip.o->type){
