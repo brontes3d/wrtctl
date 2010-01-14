@@ -618,12 +618,12 @@ int uci_find_section(ucih_ctx_t ucihc, char **s, char *p, char *o ){
             }
         }
         if (found)
-            break;
+            return UCI_OK;
     }
 
     //UCIH_DEBUG("%s: rc=%d p=%s, o=%s => s=%s\n",
         //__func__, rc, p, o, (*s) ? *s : "(null)" );
-    return rc;
+    return UCI_ERR_NOTFOUND;
 }
 
 
