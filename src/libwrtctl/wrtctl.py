@@ -49,17 +49,23 @@ class wrtctl(object):
         return self.defaultParam[defaultKey]
 
     def start_stunnel_client(self, hostname, key_path=None, port=None, wrtctlPort=None, wrtctldPort=None):
-        hostname    = self.__getOrSetDefault(hostname   , 'HOSTNAME')
-        key_path    = self.__getOrSetDefault(key_path   , 'DEFAULT_KEY_PATH')
-        port        = self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
-        wrtctlPort  = self.__getOrSetDefault(wrtctlPort , 'WRTCTL_SSL_PORT')
-        wrtctldPort = self.__getOrSetDefault(wrtctldPort, 'WRTCTLD_SSL_PORT')
+        hostname    = self.__getOrSetDefault(hostname,      'HOSTNAME')
+        key_path    = self.__getOrSetDefault(key_path,      'DEFAULT_KEY_PATH')
+        port        = self.__getOrSetDefault(port,          'WRTCTLD_DEFAULT_PORT')
+        wrtctlPort  = self.__getOrSetDefault(wrtctlPort,    'WRTCTL_SSL_PORT')
+        wrtctldPort = self.__getOrSetDefault(wrtctldPort,   'WRTCTLD_SSL_PORT')
         self.ctxObject = _wrtctl.start_stunnel_client(hostname, key_path, port, wrtctlPort, wrtctldPort)
 
-    def create_connection(self, hostname=None, port=None):
-        hostname    = self.__getOrSetDefault(hostname   , 'HOSTNAME')
-        port        = self.__getOrSetDefault(port       , 'WRTCTLD_DEFAULT_PORT')
-        _wrtctl.create_connection(self.wrtctlObject, hostname, port)
+    def create_connection(self, hostname=None, port=None, use_ssl=None, wrtctlPort=None):
+        hostname    = self.__getOrSetDefault(hostname,  'HOSTNAME')
+        port        = self.__getOrSetDefault(port,      'WRTCTLD_DEFAULT_PORT')
+        use_ssl     = self.__getOrSetDefault(use_ssl,   'USE_SSL')
+        if use_ssl:
+            wrtctlPort  = self.__getOrSetDefault(wrtctlPort, 'WRTCTL_SSL_PORT')
+            self.start_stunnel_client(hostname, port=port)
+            _wrtctl.create_connection(self.wrtctlObject, 'localhost', wrtctlPort)
+        else:
+            _wrtctl.create_connection(self.wrtctlObject, hostname, port)
 
     def queue_net_command(self, commandStr): 
         _wrtctl.queue_net_command(self.wrtctlObject, commandStr)
