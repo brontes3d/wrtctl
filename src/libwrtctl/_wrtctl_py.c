@@ -190,7 +190,7 @@ static PyObject* Py_queue_net_command( PyObject *obj, PyObject *args ){
 static PyObject* Py_wait_on_response(PyObject *obj, PyObject *args){
     PyObject *pync          = NULL;
     int timeoutSec          = 0;
-    bool flushSendQueue     = true;
+    int flushSendQueue      = 1;
     struct timeval timeout  = { 0, 0 };
     nc_t nc                 = NULL;
     int rc; 
