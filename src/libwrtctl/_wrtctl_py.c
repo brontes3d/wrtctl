@@ -230,18 +230,18 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
         return NULL;
 
     if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "No response from %s",
-            nc->dd->host );
+        char buf[256];
+        snprintf(buf, 256, "No response from %s.", nc->dd->host);
+        PyErr_SetObject(PyExc_IOError,
+            Py_BuildValue("(is)", ENOMSG, buf) );
         return NULL;
     }
     
     if ( (rc = unpack_net_cmd_packet(&ncmd, rp)) != NET_OK ){
-        PyErr_Format(
-            PyExc_EnvironmentError, 
-            "unpack_net_cmd_packet() failed with error %d(%s)",
-            rc, net_strerror(rc) );
+        char buf[256];
+        snprintf(buf, 256, "unpack_net_cmd_packet: %s.", net_strerror(rc));
+        PyErr_SetObject(PyExc_IOError,
+            Py_BuildValue("(is)", ENOMEM, buf) );
         return NULL;
     }
     
