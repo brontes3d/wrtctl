@@ -145,6 +145,9 @@ int flush_sendq(dd_t dd){
     packet_t cp, tmp = NULL;
     int rc = NET_OK;
 
+    if ( !dd )
+        return NET_OK;
+
     STAILQ_FOREACH_SAFE(cp, &(dd->sendq), packet_queue, tmp){
         STAILQ_REMOVE(&(dd->sendq), cp, packet, packet_queue);
         if ( rc == NET_OK )

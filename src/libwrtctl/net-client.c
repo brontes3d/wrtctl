@@ -97,6 +97,11 @@ int wait_on_response(nc_t nc, struct timeval *timeout, bool send_packets){
     int rc;
     fd_set incoming_fd;
 
+    if ( !nc->dd ){
+        err("No connection.")
+        return NET_ERR_FD;
+    }
+
     if ( send_packets && (rc = flush_sendq(nc->dd)) != NET_OK ){
         err("flush_sendq returned %d\n", rc);
         return rc;
