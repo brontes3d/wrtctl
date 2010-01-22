@@ -480,7 +480,7 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
     }
 
     if ( pid == 0 ){
-        char *argv[] = { ns->reboot_cmd, "-r", "now", NULL };
+        char *argv[] = { ns->reboot_cmd, NULL };
         char *envir[] = { NULL };
         extern int errno;
         /* We separate and sleep for 5 seconds.  This should be plenty of
