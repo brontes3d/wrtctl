@@ -219,6 +219,10 @@ int main(int argc, char **argv){
    
 
 shutdown:
+#ifdef ENABLE_STUNNEL
+    if ( stunnel_ctx )
+        kill_stunnel( &stunnel_ctx );
+#endif
     if ( ns )
         free_ns(&ns);
     if ( do_daemonize )
