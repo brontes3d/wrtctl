@@ -12,7 +12,7 @@ key_path="${testdir}/stunnel.pem"
 export WRTCTL_UCI_CONFDIR=${testdir}/config
 export WRTCTL_UCI_SAVEDIR=${testdir}/savedir
 export WRTCTL_SYS_INITD_DIR=@TOP_SRCDIR@/test/systest
-export WRTCTL_SYS_SHUTDOWN_PATH=@TOP_SRCDIR@/test/systest/shutdown
+export WRTCTL_SYS_REBOOT_CMD=@TOP_SRCDIR@/test/systest/shutdown
 
 create_conf_file() {
    mkdir -p ${WRTCTL_UCI_CONFDIR} >/dev/null
@@ -196,7 +196,7 @@ run_uci_tests() {
 
 run_daemon_tests() {
     local i
-    local op=${WRTCTL_SYS_SHUTDOWN_PATH}
+    local op=${WRTCTL_SYS_REBOOT_CMD}
 
     printf "%-50s" "Testing daemon commands"
    
@@ -212,7 +212,7 @@ run_daemon_tests() {
     done
 
     stop_daemon
-    export WRTCTL_SYS_SHUTDOWN_PATH=/path/does/not/exist
+    export WRTCTL_SYS_REBOOT_CMD=/path/does/not/exist
     start_daemon
     for ((i=0; i<${#daemon_bad_path_tests[@]}; i+=4)); do
         run_test \
@@ -225,7 +225,7 @@ run_daemon_tests() {
     done
 
     stop_daemon
-    export WRTCTL_SYS_SHUTDOWN_PATH=${op}
+    export WRTCTL_SYS_REBOOT_CMD=${op}
     start_daemon
     chmod -x ${op}
     for ((i=0; i<${#daemon_noexe_tests[@]}; i+=4)); do

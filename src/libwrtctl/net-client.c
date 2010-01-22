@@ -216,7 +216,7 @@ int parse_daemon_cmd(char *cmdline, packet_t *sp){
     if ( !strncmp(cmdline, "ping", 5) )
         id = DAEMON_CMD_PING;
     else if ( !strncmp(cmdline, "reboot", 9) )
-        id = DAEMON_CMD_SHUTDOWN;
+        id = DAEMON_CMD_REBOOT;
     else {
         fprintf(stderr, "Invalid daemon command line.\n");
         return EINVAL;

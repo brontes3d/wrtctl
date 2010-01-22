@@ -6,7 +6,7 @@ key_path="@TOP_BUILDDIR@/test/stunnel.pem"
 export WRTCTL_UCI_CONFDIR=@TOP_BUILDDIR@/test/config
 export WRTCTL_UCI_SAVEDIR=@TOP_BUILDDIR@/test/savedir
 export WRTCTL_SYS_INITD_DIR=@TOP_BUILDDIR@/test/systest
-export WRTCTL_SYS_SHUTDOWN_PATH=@TOP_BUILDDIR@/test/systest/shutdown
+export WRTCTL_SYS_REBOOT_CMD=@TOP_BUILDDIR@/test/systest/shutdown
 
 create_conf_file() {
    mkdir -p ${WRTCTL_UCI_CONFDIR} >/dev/null

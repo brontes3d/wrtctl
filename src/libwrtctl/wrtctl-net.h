@@ -119,7 +119,7 @@ enum mod_errno {
 #define DAEMON_CMD_MAGIC "DAE"
 #define DAEMON_CMD_NONE         (uint16_t)0
 #define DAEMON_CMD_PING         (uint16_t)1
-#define DAEMON_CMD_SHUTDOWN     (uint16_t)2
+#define DAEMON_CMD_REBOOT       (uint16_t)2
 
 
 struct net_cmd {
@@ -153,7 +153,7 @@ struct net_server {
     bool    enable_log;
     bool    verbose;
 
-    char    *shutdown_path;
+    char    *reboot_cmd;
 
     int     (*server_loop)(ns_t);
     int     (*handler)(ns_t, dd_t);

@@ -59,7 +59,7 @@ int     daemon_cmd_reboot   (ns_t ns, char *unused, uint16_t *out_rc, char **out
 int create_ns(ns_t *ns, char *addr, char *port, char *module_list, bool enable_log, bool verbose){
     int rc = NET_OK;
     md_t daemon_mod = NULL;
-    char *shutdown_path = NULL;
+    char *reboot_cmd = NULL;
     struct addrinfo hints, *res = NULL;
     int t=1;
     
@@ -108,10 +108,10 @@ int create_ns(ns_t *ns, char *addr, char *port, char *module_list, bool enable_l
         goto err;
     }
 
-    shutdown_path = getenv("WRTCTL_SYS_SHUTDOWN_PATH");
-    if ( !shutdown_path )
-        shutdown_path = "/sbin/shutdown";
-    if ( !((*ns)->shutdown_path = strdup(shutdown_path)) ){
+    reboot_cmd = getenv("WRTCTL_SYS_REBOOT_CMD");
+    if ( !reboot_cmd )
+        reboot_cmd = "/sbin/reboot";
+    if ( !((*ns)->reboot_cmd = strdup(reboot_cmd)) ){
         rc = NET_ERR_MEM;
         goto err;
     }
@@ -167,8 +167,8 @@ void free_ns(ns_t *ns){
         }
 
         unload_modules(&((*ns)->mod_list));
-        if ( (*ns)->shutdown_path )
-            free( (*ns)->shutdown_path );
+        if ( (*ns)->reboot_cmd )
+            free( (*ns)->reboot_cmd );
         free( (*ns) );
         *ns = NULL;
     }
@@ -408,7 +408,7 @@ int daemon_mod_handler(void *ctx, net_cmd_t cmd, packet_t *outp){
         case DAEMON_CMD_PING:
             rc = daemon_cmd_ping(ns, NULL, &out_rc, &out_str);
             break;
-        case DAEMON_CMD_SHUTDOWN:
+        case DAEMON_CMD_REBOOT:
             rc = daemon_cmd_reboot(ns, NULL, &out_rc, &out_str);
             break;
         default:
@@ -460,7 +460,7 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
     pid_t pid;
 
     
-    if ( access(ns->shutdown_path, X_OK) != 0 ){
+    if ( access(ns->reboot_cmd, X_OK) != 0 ){
         if ( asprintf(out_str, "access:  %s", strerror(errno)) == -1 ){
             err("asprintf: %s\n", strerror(errno));
             *out_str = NULL;
@@ -480,7 +480,7 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
     }
 
     if ( pid == 0 ){
-        char *argv[] = { ns->shutdown_path, "-r", "now", NULL };
+        char *argv[] = { ns->reboot_cmd, "-r", "now", NULL };
         char *envir[] = { NULL };
         extern int errno;
         /* We separate and sleep for 5 seconds.  This should be plenty of
@@ -488,7 +488,7 @@ int daemon_cmd_reboot(ns_t ns, char *unused, uint16_t *out_rc, char **out_str){
          */
         setsid();
         sleep(5);
-        return execve(ns->shutdown_path, argv, envir);
+        return execve(ns->reboot_cmd, argv, envir);
     } else {
         ns->shutdown = true;
         if ( asprintf(out_str, "Rebooting...") == -1 ){
