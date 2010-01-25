@@ -84,7 +84,3 @@ class wrtctl(object):
     def get_net_response(self):
         """Get and return (ID, subsystemStr, valueStr)."""
         return _wrtctl.get_net_response(self.wrtctlObject)
-
-    def __del__(self):
-        if self.ctxObject:
-            _wrtctl.kill_stunnel(self.ctxObject)
