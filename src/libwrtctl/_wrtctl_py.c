@@ -64,9 +64,15 @@ static PyObject* Py_alloc_client( PyObject *obj, PyObject *args ){
     if ( !PyArg_ParseTuple(args, "|ii", &enable_log, &verbose) )
         return NULL;
     if ( (rc = alloc_client(&nc, enable_log, verbose)) != NET_OK ){
-        PyErr_Format(PyExc_EnvironmentError, 
-            "alloc_client() failed with error %d(%s)",
-            rc, net_strerror(rc) );
+        char *errmsg = NULL;
+        errno = EIO;
+        if ( asprintf(&errmsg, "alloc_client() failed with error %d(%s)",
+                rc, net_strerror(rc)) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
     return PyCObject_FromVoidPtr((void*)nc, deletenc);
@@ -106,11 +112,18 @@ static PyObject* Py_start_stunnel_client(PyObject *obj, PyObject *args) {
             port,
             wrtctl_port,
             wrtctld_port)) != 0 ){
-
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "start_stunnel_client('%s', '%s', '%s', '%s', '%s') failed with error %d(%s)",
-            hostname, key_path, port, wrtctl_port, wrtctld_port, rc, net_strerror(rc) );
+        
+        char *errmsg = NULL;
+        errno = ENOMEM;
+        if ( asprintf(&errmsg, 
+                    "start_stunnel_client('%s', '%s', '%s', '%s', '%s') failed with error %d(%s)",
+                    hostname, key_path, port, wrtctl_port, wrtctld_port, rc, net_strerror(rc) ) 
+                    != -1 ) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
         return NULL;
     }
     return PyCObject_FromVoidPtr((void*)ctx, deletectx);
@@ -153,11 +166,18 @@ static PyObject* Py_create_connection( PyObject *obj, PyObject *args ){
     if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
     if ( (rc = create_conn(nc, hostname, port)) != NET_OK ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "create_conn('%s', '%s') failed with error %d(%s)",
-            hostname, port, rc, net_strerror(rc) );
-        return NULL;
+        char *errmsg = NULL;
+        errno = EIO;
+
+        if ( asprintf(&errmsg, 
+                "create_conn('%s', '%s') failed with error %d(%s)",
+                hostname, port, rc, net_strerror(rc) ) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+       return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -176,10 +196,17 @@ static PyObject* Py_queue_net_command( PyObject *obj, PyObject *args ){
         return NULL;
 
     if ( (rc = line_to_packet(cmd_str, &sp)) != NET_OK ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "line_to_packet() failed with error %d(%s)", 
-            rc, strerror(rc));
+        char *errmsg = NULL;
+        errno = EINVAL;
+
+        if ( asprintf(&errmsg,
+                "line_to_packet() failed with error %d(%s)", 
+                rc, strerror(rc)) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
     nc_add_packet(nc, sp);
@@ -203,10 +230,17 @@ static PyObject* Py_wait_on_response(PyObject *obj, PyObject *args){
     timeout.tv_sec = timeoutSec;
     rc = wait_on_response(nc, &timeout, flushSendQueue);
     if ( rc != NET_OK && rc != NET_ERR_TIMEOUT ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "wait_on_response(%d) failed with error %d(%s)",
-            timeoutSec, rc, net_strerror(rc) );
+        char *errmsg = NULL;
+        errno = EIO;
+
+        if ( asprintf(&errmsg,
+                "wait_on_response(%d) failed with error %d(%s)",
+                timeoutSec, rc, net_strerror(rc) ) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
     return Py_BuildValue("i", rc);    
@@ -230,18 +264,31 @@ static PyObject* Py_get_net_response(PyObject *obj, PyObject *args){
         return NULL;
 
     if ( !(rp = STAILQ_FIRST(&(nc->dd->recvq))) ){
-        char buf[256];
-        snprintf(buf, 256, "No response from %s.", nc->dd->host);
-        PyErr_SetObject(PyExc_IOError,
-            Py_BuildValue("(is)", ENOMSG, buf) );
+        char *errmsg;
+        errno = ENOMSG;
+
+        if ( asprintf(&errmsg, 
+                "No response from %s.",
+                nc->dd->host) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
     
     if ( (rc = unpack_net_cmd_packet(&ncmd, rp)) != NET_OK ){
-        char buf[256];
-        snprintf(buf, 256, "unpack_net_cmd_packet: %s.", net_strerror(rc));
-        PyErr_SetObject(PyExc_IOError,
-            Py_BuildValue("(is)", ENOMEM, buf) );
+        char *errmsg;
+        errno = ENOMEM;
+        if ( asprintf(&errmsg, 
+                "unpack_net_cmd_packet: %s.",
+                net_strerror(rc)) != -1 ){
+            PyErr_SetFromErrnoWithFilename(PyExc_IOError, errmsg);
+            free(errmsg);
+        } else {
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
     
@@ -259,27 +306,23 @@ static int setDictItem( PyObject* dict, char *key, char *val, int ival ){
 
     if (val){
         if ( !(oVal = PyString_FromString(val)) ){
-            PyErr_Format(
-                PyExc_EnvironmentError,
-                "Could not create item string '%s'",
-                val );
+            errno = EINVAL;
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                "setDictItem:  Failed to create string.");
             return -1;
         }
     } else {
         if ( !(oVal = PyInt_FromLong(ival)) ){
-            PyErr_Format(
-                PyExc_EnvironmentError,
-                "Could not create item int '%d'",
-                ival );
+            errno = EINVAL;
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                "setDictItem:  Failed to create long.");
             return -2;
         }
     }
 
     if ( PyDict_SetItemString(dict, key, oVal) ){
-        PyErr_Format(
-            PyExc_EnvironmentError,
-            "Could not set dictionary item '%s'",
-            key );
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+            "setDictItem:  Failed to set dictionary item.");
         return -3;
     }
     return 0;
