@@ -5,8 +5,8 @@ import os
 import signal
 import re
 
-sys.path.append('@TOP_BUILDDIR@/src/libwrtctl/.libs/')
-sys.path.append('@TOP_SRCDIR@/src/libwrtctl/')
+sys.path.insert(0, '@TOP_BUILDDIR@/src/libwrtctl/.libs/')
+sys.path.insert(0, '@TOP_SRCDIR@/src/libwrtctl/')
 import wrtctl
 
 print "Testing wrtctl python module"
@@ -16,7 +16,7 @@ rc=0
 
 try:
     w = wrtctl.wrtctl()
-    w.create_connection('localhost')
+    w.create_connection('localhost', use_ssl=False)
     w.queue_net_command('uci:get test..first_opt')
     w.wait_on_response()
     rc,_,str = w.get_net_response()
