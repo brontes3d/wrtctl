@@ -68,7 +68,6 @@ if test x"$enable_python" = xyes; then
     AC_PYTHON_DEVEL( >= '2.5' )
     AC_SUBST(PYTHON_LDFLAGS)
     AC_SUBST(PYTHON_CPPFLAGS)
-    AC_SUBST(PYTHON_SITE_PKG)
 fi
 AM_CONDITIONAL(ENABLE_PYTHON, test x"$enable_python" = xyes)
 
