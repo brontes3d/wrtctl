@@ -71,6 +71,11 @@ static struct const_map constants_map [] = {
     { "WRTCTLD_DEFAULT_PORT",   -1,                 WRTCTLD_DEFAULT_PORT },
     { "WRTCTLD_SSL_PORT",       -1,                 WRTCTLD_SSL_PORT },
     { "WRTCTL_SSL_PORT",        -1,                 WRTCTL_SSL_PORT },
+#ifdef ENABLE_STUNNEL
+    { "SSL_ENABLED",            1,                  NULL },
+#else
+    { "SSL_ENABLED",            0,                  NULL },
+#endif
     { NULL,                     -1,                 NULL },
 };
 

@@ -329,28 +329,6 @@ static int setDictItem( PyObject* dict, char *key, char *val, int ival ){
 }
 
 
-static PyObject* Py_get_param_defaults(PyObject *obj, PyObject *args) {
-    PyObject* dict = PyDict_New();
-    PyObject* use_ssl = Py_False;
-
-#ifdef ENABLE_STUNNEL
-    use_ssl = Py_True;
-#endif
-
-    if (setDictItem(dict,           "DEFAULT_KEY_PATH",     DEFAULT_KEY_PATH    , 0)
-            || setDictItem(dict,    "WRTCTLD_DEFAULT_PORT", WRTCTLD_DEFAULT_PORT, 0)
-            || setDictItem(dict,    "WRTCTL_SSL_PORT",      WRTCTL_SSL_PORT     , 0)
-            || setDictItem(dict,    "WRTCTLD_SSL_PORT",     WRTCTLD_SSL_PORT    , 0)
-            || setDictItem(dict,    "NET_ERR_TIMEOUT",      NULL                , NET_ERR_TIMEOUT)
-            || setDictItem(dict,    "NET_OK",               NULL                , NET_OK         )
-            || PyDict_SetItemString(dict, "USE_SSL", use_ssl) ){
-        return NULL;
-    }
-    return dict;    
-}
-
-
-
 static void cleanup_wrtctl() {
 }
 
@@ -380,11 +358,6 @@ static PyMethodDef _wrtctl_funcs[] = {
         { "get_net_response",
             Py_get_net_response,    METH_VARARGS,
             "(id, subsystemStr, valueStr) = _wrtctl.get_net_response(wco)"
-        },
-
-        { "get_param_defaults",
-            Py_get_param_defaults,  METH_NOARGS,
-            "{ <default values> } = _wrtctl.get_param_defaults()"
         },
 
         { "start_stunnel_client",
