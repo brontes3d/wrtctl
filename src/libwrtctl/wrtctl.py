@@ -33,7 +33,7 @@
 """
 
 import _wrtctl
-
+from _wrtctl_const import *
 
 class wrtctl(object):
     """Python class-style wrapper for _wrtctl C functionality."""
