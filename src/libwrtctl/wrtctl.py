@@ -40,31 +40,27 @@ from _wrtctl_const import *
 class wrtctl(object):
     """Python class-style wrapper for _wrtctl C functionality."""
 
-    def __init__(self, enable_log=True, verbose=False):
-        self.wrtctlObject = _wrtctl.alloc_client(enable_log, verbose)
+    def __init__(self):
+        self.wrtctlObject = _wrtctl.alloc_client()
         self.ctxObject = None
 
     def start_stunnel_client(self,
             hostname,
             key_path =      DEFAULT_KEY_PATH,
             port =          WRTCTLD_DEFAULT_PORT,
-            wrtctlPort =    WRTCTL_SSL_PORT,
-            wrtctldPort =   WRTCTL_SSL_PORT ):
-        self.ctxObject = _wrtctl.start_stunnel_client(hostname, key_path, port, wrtctlPort, wrtctldPort)
+            wrtctl_port =    WRTCTL_SSL_PORT,
+            wrtctld_port =   WRTCTL_SSL_PORT ):
+        self.ctxObject = _wrtctl.start_stunnel_client(hostname, key_path, port, wrtctl_port, wrtctld_port)
 
     def create_connection(self,
             hostname,
             port =      None,
             use_ssl =   SSL_ENABLED):
         if use_ssl:
-            ssl_port = WRTCTLD_SSL_PORT
-            if not port:
-                port = WRTCTLD_DEFAULT_PORT
-            if port == ssl_port:
-                raise OSError(errno.EINVAL,
-                    "port cannot be the same as the ssl port (%d)" % (ssl_port,))
-            self.start_stunnel_client(hostname, port=port)
-            _wrtctl.create_connection(self.wrtctlObject, 'localhost', port)
+            # If port is specified, we assume that is the ssl port to connect to.
+            ssl_port = port or WRTCTLD_SSL_PORT
+            self.start_stunnel_client(hostname, wrtctld_port=ssl_port)
+            _wrtctl.create_connection(self.wrtctlObject, 'localhost', WRTCTL_SSL_PORT)
         else:
             if not port:
                 port = WRTCTLD_DEFAULT_PORT
