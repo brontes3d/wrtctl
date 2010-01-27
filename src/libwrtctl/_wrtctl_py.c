@@ -56,14 +56,10 @@ static void deletenc(void *vptr) {
 }
 
 static PyObject* Py_alloc_client( PyObject *obj, PyObject *args ){    
-    bool enable_log = true;
-    bool verbose    = false;
     nc_t nc;
     int rc;
     
-    if ( !PyArg_ParseTuple(args, "|ii", &enable_log, &verbose) )
-        return NULL;
-    if ( (rc = alloc_client(&nc, enable_log, verbose)) != NET_OK ){
+    if ( (rc = alloc_client(&nc, true, false)) != NET_OK ){
         char *errmsg = NULL;
         errno = EIO;
         if ( asprintf(&errmsg, "alloc_client() failed with error %d(%s)",
@@ -335,8 +331,8 @@ static void cleanup_wrtctl() {
 
 static PyMethodDef _wrtctl_funcs[] = {
         { "alloc_client",
-            Py_alloc_client,        METH_VARARGS,
-            "wco = _wrtctl.alloc_client(log=True, verbose=False)"
+            Py_alloc_client,        METH_NOARGS,
+            "wco = _wrtctl.alloc_client()"
         },
 
         { "create_connection",
@@ -364,7 +360,7 @@ static PyMethodDef _wrtctl_funcs[] = {
             Py_start_stunnel_client, METH_VARARGS,
             "ctxobj = _wrtctl.start_stunnel_client(hostname, key_path='" \
             DEFAULT_KEY_PATH"', port='"WRTCTLD_DEFAULT_PORT"', wrtctlPort='" \
-            WRTCTL_SSL_PORT"', wrtctldPort='"WRTCTLD_SSL_PORT"')" 
+            WRTCTL_SSL_PORT"', wrtctld_port='"WRTCTLD_SSL_PORT"')" 
         },
 
         { "kill_stunnel",
