@@ -47,7 +47,7 @@ extern bool wrtctl_enable_log;
     
 #define err(str...) \
     if ( wrtctl_enable_log ) syslog(LOG_ERR, str); \
-    if ( wrtctl_verbose ) fprintf(stderr, __func__);fprintf(stderr,": " str);
+    if ( wrtctl_verbose ) { fprintf(stderr, __func__);fprintf(stderr,": " str); }
 
 #define err_rc(rc, str...) \
     if ( rc != 0 ) err(str);
