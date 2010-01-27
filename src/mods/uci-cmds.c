@@ -617,6 +617,7 @@ int uci_find_section(ucih_ctx_t ucihc, char **s, char *p, char *o ){
     }
 
     rc = UCI_ERR_NOTFOUND;
+    /* Search anonymous sections first */
     uci_foreach_element( &package->sections, se){
         section = uci_to_section(se);
         if ( !section->anonymous )
@@ -635,6 +636,27 @@ int uci_find_section(ucih_ctx_t ucihc, char **s, char *p, char *o ){
         if (found)
             return UCI_OK;
     }
+
+    /* If not found, we also check named sections */
+    uci_foreach_element( &package->sections, se){
+        section = uci_to_section(se);
+        if ( section->anonymous )
+            continue;
+        uci_foreach_element( &section->options, oe){
+            option = uci_to_option(oe);
+            if ( !strcmp(o, oe->name) ){
+                found = true;
+                if ( !((*s) = strdup(se->name)) )
+                    rc = UCI_ERR_MEM;
+                else
+                    rc = UCI_OK;
+                break; 
+            }
+        }
+        if (found)
+            return UCI_OK;
+    }
+
 
     //UCIH_DEBUG("%s: rc=%d p=%s, o=%s => s=%s\n",
         //__func__, rc, p, o, (*s) ? *s : "(null)" );

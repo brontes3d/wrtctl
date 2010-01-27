@@ -111,6 +111,7 @@ uci_tests=(
     "run"   0   "test\.@anon_section\[0\].first_opt=1"      "uci:get test.@anon_section[0].first_opt"
     "run"   0   "test\.@anon_section\[1\].first_opt=3"      "uci:get test.@anon_section[1].first_opt"
     "run"   0   "test\.section_name.optA=A"                 "uci:get test.section_name.optA"
+    "run"   0   "test\.section_name.optA=A"                 "uci:get test..optA"
     "run"   1   "3, test.blah.blah not found"               "uci:get test.blah.blah"
     "run"   1   "3, uci_lookup_ptr: Entry not found"        "uci:get blah.blah.blah"
     "run"   0   ""                                          "uci:set test..first_opt=was_set"
