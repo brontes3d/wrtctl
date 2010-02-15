@@ -51,8 +51,9 @@ static void * validObjectPointer( PyObject *pync ){
 
 
 static void deletenc(void *vptr) {
-    if (vptr)
-        free(vptr);
+    nc_t nc = (nc_t)vptr;
+    close_conn(nc);
+    free(nc);
 }
 
 static PyObject* Py_alloc_client( PyObject *obj, PyObject *args ){    
