@@ -86,6 +86,12 @@ int create_conn(nc_t nc, char *to, char *port){
         goto done;
     }
 
+    if ( nc->dd ) {
+        shutdown(nc->dd->fd, SHUT_RDWR);
+        close(nc->dd->fd);
+        free_dd(&nc->dd);
+    }
+    
     rc = create_dd(&(nc->dd), fd);
 
 done:
