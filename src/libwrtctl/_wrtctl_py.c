@@ -191,6 +191,12 @@ static PyObject* Py_queue_net_command( PyObject *obj, PyObject *args ){
     if ( !(nc = (nc_t)validObjectPointer(pync)) )
         return NULL;
 
+    if ( !nc->dd ) {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, 
+            "Client is not connected to server.");
+        return NULL;
+    }
+
     if ( (rc = line_to_packet(cmd_str, &sp)) != NET_OK ){
         char *errmsg = NULL;
         errno = EINVAL;
