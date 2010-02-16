@@ -34,3 +34,5 @@
 
 
 from wrtctl import wrtctl
+from _wrtctl_const import *
+
