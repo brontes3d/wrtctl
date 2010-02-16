@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([wrtctl], [0.1], [http://www.brontes3d.com/opensource])
+AC_INIT([wrtctl], [0.2], [http://www.brontes3d.com/opensource])
 AC_CONFIG_AUX_DIR(build-aux)
 
 AM_INIT_AUTOMAKE([dist-bzip2 -Wno-portability])
