@@ -78,8 +78,7 @@ int create_dd(dd_t *dd, int fd){
 
         if ( (rc = getnameinfo( (struct sockaddr *)&sa, socklen, buf, 512, NULL, 0, 0)) != 0 ){
             err("getnameinfo: %s\n", gai_strerror(rc));
-            free_dd(dd);
-            return NET_ERR_NS;
+            sprintf(buf, "<unknown>");
         }
         if ( !((*dd)->host = strdup(buf)) ){
             free_dd(dd);
